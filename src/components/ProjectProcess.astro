@@ -1,0 +1,543 @@
+---
+// 制作过程：固定时间线（世界观 → 资产 → 关键帧 → 包装展示）。
+// 资产段的行内卡片可点开，把该角色的过程资产图组展开在行内；同时只开一个（手风琴）。
+// 段内无素材则整段不渲染。
+import type { CollectionEntry } from 'astro:content';
+import { getAspectRatio } from '../lib/imageRatio';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  /** 媒体基址，如 /media/ai-video/evolution-wolf-herder/ */
+  mediaBase: string;
+  /**
+   * 渲染范围：
+   *  - `world` → 世界观页：世界观 + 资产 + 关键帧
+   *  - `film`  → 影片页：仅包装展示
+   *  - `all`   → 影片页合并渲染：世界观 + 资产 + 关键帧 + 包装展示
+   *             （进化论从想法板块并入实践板块后用，避免详情页内容丢失）
+   */
+  scope?: 'world' | 'film' | 'all';
+}
+const { project, mediaBase, scope = 'film' } = Astro.props;
+const p = project.data.process;
+// world：世界观三段；film：仅包装；all：两者全要
+const showWorld = scope === 'world' || scope === 'all';
+const showFilm = scope === 'film' || scope === 'all';
+const hasAny =
+  !!p &&
+  ((showWorld && (!!p.worldview || p.script.length > 0 || p.assets.length > 0 || p.keyFrames.length > 0)) ||
+    (showFilm && p.packaging.length > 0));
+
+const assetCount = p ? p.assets.reduce((n, r) => n + r.cards.length, 0) : 0;
+// 卡片轮播需要知道每张图的朝向与比例：16:9 覆盖整卡，竖图只覆盖左侧图区。
+// 图区宽度按卡内最宽的竖图统一约束：宽度占比 = 9/16 × 图片宽高比，上限取 3:4（27/64 ≈ 42.19%），
+// 保证 9:16 / 3:4 等竖图都不会压过右侧文字区。
+const PORTRAIT_MAX = 27 / 64;
+const toMediaPct = (ratios: number[]) => {
+  const portraitWidths = ratios.filter((r) => r < 1).map((r) => (r * 9) / 16);
+  return portraitWidths.length ? Math.min(Math.max(...portraitWidths), PORTRAIT_MAX) * 100 : 0;
+};
+const assetRows = await Promise.all(
+  (p?.assets ?? []).map(async (row, ri) => ({
+    label: row.label,
+    cards: await Promise.all(
+      row.cards.map(async (card, ci) => {
+        const coverRatio = await getAspectRatio(`public${mediaBase}${card.cover}`);
+        const rest = await Promise.all(
+          card.assets.map(async (file) => ({
+            file,
+            ratio: await getAspectRatio(`public${mediaBase}${file}`),
+          }))
+        );
+        // 轮播顺序：竖构图在前、横构图在后；首图（cover）不参与轮播
+        rest.sort((a, b) => Number(b.ratio < 1) - Number(a.ratio < 1));
+        const mediaPct = toMediaPct([coverRatio, ...rest.map((s) => s.ratio)]);
+        return {
+          ...card,
+          key: `pp-${ri}-${ci}`,
+          cover: { file: card.cover, portrait: coverRatio < 1 },
+          shots: rest.map((s) => ({ ...s, portrait: s.ratio < 1 })),
+          mediaPct,
+        };
+      })
+    ),
+  }))
+);
+---
+
+{
+  hasAny && p && (
+    <section class="block">
+      <p class="label en-title reveal">
+        {scope === 'world' ? 'WORLDVIEW · 世界观' : 'PRODUCTION PROCESS · 制作过程'}
+      </p>
+      <h2 class="title-type reveal">{scope === 'world' ? '世界观' : '制作过程'}</h2>
+
+      <ol class="pp-timeline">
+        {
+          showWorld && p.worldview && (
+            <li class="pp-stage pp-stage--worldview is-clamped">
+              <div class="pp-stage__head reveal">
+                <span class="pp-dot" aria-hidden="true" />
+                <span class="pp-stage__name">世界观</span>
+                <span class="pp-stage__count">{p.worldview ? '01' : '00'}</span>
+              </div>
+              <div class="pp-world reveal">
+                <p class="pp-world__text">{p.worldview}</p>
+                <button type="button" class="pp-world__more" data-more aria-expanded="false">
+                  <span class="pp-world__more-label">展开更多</span>
+                  <span class="pp-world__more-chev" aria-hidden="true">▾</span>
+                </button>
+              </div>
+            </li>
+          )
+        }
+        {
+          showWorld && p.assets.length > 0 && (
+            <li class="pp-stage">
+              <div class="pp-stage__head reveal">
+                <span class="pp-dot" aria-hidden="true" />
+                <span class="pp-stage__name">资产</span>
+                <span class="pp-stage__count">{String(assetCount).padStart(2, '0')}</span>
+              </div>
+              <div class="pp-rows">
+                {assetRows.map((row) => (
+                  <div class="pp-row">
+                    <p class="pp-row__label reveal">{row.label}</p>
+                    <div class="pp-cards">
+                      {row.cards.map((card) => (
+                        <article
+                          class="pp-card reveal"
+                          style={card.mediaPct > 0 ? `--pp-media: ${card.mediaPct.toFixed(2)}%` : undefined}
+                        >
+                          <div class="pp-card__shots" aria-hidden="true">
+                            <img
+                              class:list={[
+                                'pp-card__shot',
+                                card.cover.portrait ? 'is-portrait' : 'is-landscape',
+                                'is-active',
+                              ]}
+                              src={`${mediaBase}${card.cover.file}`}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            {card.shots.map((shot) => (
+                              <img
+                                class:list={[
+                                  'pp-card__shot',
+                                  shot.portrait ? 'is-portrait' : 'is-landscape',
+                                ]}
+                                src={`${mediaBase}${shot.file}`}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ))}
+                          </div>
+                          <div class="pp-card__text">
+                            <p class="pp-card__name">{card.name}</p>
+                            {card.role && <p class="pp-card__role">{card.role}</p>}
+                            {card.note && <p class="pp-card__note">{card.note}</p>}
+                            {card.shots.length > 1 && (
+                              <p class="pp-card__hint">
+                                {String(card.shots.length).padStart(2, '0')} 张资产 · 悬停浏览
+                              </p>
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </li>
+          )
+        }
+        {
+          showWorld && p.keyFrames.length > 0 && (
+            <li class="pp-stage">
+              <div class="pp-stage__head reveal">
+                <span class="pp-dot" aria-hidden="true" />
+                <span class="pp-stage__name">关键帧</span>
+                <span class="pp-stage__count">{String(p.keyFrames.length).padStart(2, '0')}</span>
+              </div>
+              <div class="pp-pack">
+                {p.keyFrames.map((k) => (
+                  <figure class="pp-pack__item reveal">
+                    <img src={`${mediaBase}${k.file}`} alt={k.label} loading="lazy" />
+                    <figcaption>
+                      <span class="pp-pack__label">{k.label}</span>
+                      {k.note && <span class="pp-pack__note">{k.note}</span>}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </li>
+          )
+        }
+
+        {
+          showFilm && p.packaging.length > 0 && (
+            <li class="pp-stage">
+              <div class="pp-stage__head reveal">
+                <span class="pp-dot" aria-hidden="true" />
+                <span class="pp-stage__name">包装展示</span>
+                <span class="pp-stage__count">{String(p.packaging.length).padStart(2, '0')}</span>
+              </div>
+              <div class="pp-pack">
+                {p.packaging.map((k) => (
+                  <figure class="pp-pack__item reveal">
+                    <img src={`${mediaBase}${k.file}`} alt={k.label} loading="lazy" />
+                    <figcaption>
+                      <span class="pp-pack__label">{k.label}</span>
+                      {k.note && <span class="pp-pack__note">{k.note}</span>}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </li>
+          )
+        }
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  .pp-timeline {
+    list-style: none;
+    margin: clamp(1.8rem, 4vh, 2.8rem) 0 0;
+    padding: 0;
+    position: relative;
+  }
+  .pp-timeline::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    width: 1px;
+    background: var(--border);
+  }
+  .pp-stage {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: clamp(2rem, 5vh, 3.2rem);
+  }
+  .pp-stage:last-child { margin-bottom: 0; }
+  .pp-stage__head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1rem;
+  }
+  .pp-dot {
+    position: absolute;
+    left: 0;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 0 4px var(--bg);
+  }
+  .pp-stage__name {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .pp-stage__count {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 1px 8px;
+  }
+
+  /* 世界观：默认显示前几行，点击展开更多 */
+  .pp-world { position: relative; }
+  .pp-stage--worldview.is-clamped .pp-world__text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    overflow: hidden;
+  }
+  .pp-stage--worldview.is-clamped .pp-world::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2.4rem;
+    height: 3rem;
+    background: linear-gradient(to bottom, transparent, var(--surface));
+    pointer-events: none;
+  }
+  .pp-world__more {
+    margin-top: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .pp-world__more:hover { color: var(--accent-strong); }
+  .pp-world__more-chev { transition: transform var(--dur-base) var(--ease); }
+  .pp-stage--worldview:not(.is-clamped) .pp-world__more-chev { transform: rotate(180deg); }
+
+  .pp-scripts { display: grid; gap: 0.8rem; }
+  .pp-script {
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-media);
+    background: var(--surface);
+    padding: 0.9rem 1rem;
+  }
+  .pp-script__label { margin: 0; color: var(--text-primary); line-height: 1.5; }
+  .pp-script__note {
+    margin: 0.4rem 0 0;
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .pp-script-note {
+    margin: 0.8rem 0 0;
+    padding-left: 0.8rem;
+    border-left: 2px solid var(--border);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* 世界观说明（置于「世界观」段内） */
+  .pp-world {
+    margin: 0 0 1.4rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-media);
+    background: var(--surface);
+  }
+  .pp-world__text {
+    margin: 0;
+    max-width: 68ch;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    white-space: pre-wrap;
+  }
+  .pp-rows { display: grid; gap: 1.6rem; }
+  .pp-row__label {
+    margin: 0 0 0.7rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+  }
+  /* 角色卡片：固定 16:9，左图右文；悬停轮播该角色的其他资产图 */
+  .pp-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .pp-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-media);
+    background: var(--surface);
+    transition: border-color var(--dur-base) var(--ease);
+  }
+  .pp-card:hover { border-color: var(--border); }
+
+  .pp-card__shots {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+  .pp-card__shot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity var(--dur-slow) var(--ease);
+  }
+  /* 竖图（9:16 / 3:4 …）→ 统一约束在左侧图区内：
+     高度撑满，宽度 = 卡内最宽竖图比例（--pp-media，上限 3:4），左对齐，超宽部分等比缩放不外溢 */
+  .pp-card__shot.is-portrait {
+    height: 100%;
+    width: auto;
+    max-width: var(--pp-media, 42.19%);
+    object-fit: contain;
+    object-position: left center;
+  }
+  /* 16:9 → 覆盖整张卡片 */
+  .pp-card__shot.is-landscape {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .pp-card__shot.is-active { opacity: 1; }
+
+  .pp-card__text {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    /* 文字区起点跟随图区宽度，避免被竖图遮盖 */
+    left: calc(var(--pp-media, 42.19%) + 3%);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+  }
+  .pp-card__name {
+    margin: 0;
+    font-size: var(--fs-body);
+    color: var(--text-primary);
+    line-height: 1.35;
+  }
+  .pp-card__role {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    line-height: 1.4;
+  }
+  .pp-card__note {
+    margin: 0.2rem 0 0;
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .pp-card__hint {
+    margin: 0.4rem 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .pp-pack {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .pp-pack__item {
+    margin: 0;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-media);
+    overflow: hidden;
+    background: var(--surface-raised);
+  }
+  .pp-pack__item img { display: block; width: 100%; height: auto; }
+  .pp-pack__item figcaption {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid var(--border-soft);
+  }
+  .pp-pack__label { font-size: var(--fs-small); color: var(--text-primary); line-height: 1.4; }
+  .pp-pack__note { font-size: var(--fs-label); color: var(--text-muted); line-height: 1.5; }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: none;
+    will-change: auto;
+    transition: opacity var(--dur-base) var(--ease), transform var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease);
+  }
+  .reveal.in { opacity: 1; transform: none; filter: none; }
+  .pp-stage__head.reveal { transform: none; transition-duration: var(--dur-med); }
+
+  @media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+    .pp-card.reveal:nth-child(even) { transition-delay: 80ms, 80ms, 0ms; }
+  }
+
+  @media (max-width: 900px) {
+    .pp-cards { grid-template-columns: 1fr; }
+    .pp-card__text { left: calc(var(--pp-media, 42.19%) + 2.5%); padding: 0.7rem 0.85rem; }
+    .pp-card__note { display: none; }
+  }
+  @media (max-width: 760px) {
+    .pp-stage { padding-left: 1.5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .pp-card__shot { transition: none; }
+  }
+</style>
+
+<script>
+  // 角色卡片悬停 → 立即切到第一张非首图，并在非首图之间轮播。
+  // 16:9 图盖整卡，9:16 图只盖左侧图区。离开回到首图。
+  function initCardCarousel() {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll<HTMLElement>('.pp-card').forEach((card) => {
+      if (card.dataset.carouselBound === '1') return;
+      card.dataset.carouselBound = '1';
+
+      const shots = card.querySelectorAll<HTMLElement>('.pp-card__shot');
+      if (shots.length < 2 || reduce) return;
+
+      let idx = 0;
+      let timer = 0;
+      const show = (next: number) => {
+        shots[idx].classList.remove('is-active');
+        idx = next;
+        shots[idx].classList.add('is-active');
+      };
+      // 只在非首图之间循环（索引 1..n-1）
+      const nextIndex = () => (idx + 1 >= shots.length ? 1 : idx + 1);
+      const start = () => {
+        if (timer) return;
+        show(nextIndex());
+        timer = window.setInterval(() => show(nextIndex()), 1100);
+      };
+      const stop = () => {
+        window.clearInterval(timer);
+        timer = 0;
+        if (idx !== 0) show(0);
+      };
+      card.addEventListener('pointerenter', start);
+      card.addEventListener('pointerleave', stop);
+      card.addEventListener('focusin', start);
+      card.addEventListener('focusout', stop);
+    });
+  }
+
+  function initProcess() {
+    initCardCarousel();
+    initWorldviewMore();
+  }
+  function initWorldviewMore() {
+    document.querySelectorAll<HTMLButtonElement>('.pp-world__more').forEach((btn) => {
+      if (btn.dataset.moreBound === '1') return;
+      btn.dataset.moreBound = '1';
+      const stage = btn.closest<HTMLElement>('.pp-stage--worldview');
+      if (!stage) return;
+      const label = btn.querySelector<HTMLElement>('.pp-world__more-label');
+      btn.addEventListener('click', () => {
+        const clamped = stage.classList.toggle('is-clamped');
+        btn.setAttribute('aria-expanded', String(!clamped));
+        if (label) label.textContent = clamped ? '展开更多' : '收起';
+      });
+    });
+  }
+
+  initProcess();
+  document.addEventListener('astro:page-load', initProcess);
+</script>
+

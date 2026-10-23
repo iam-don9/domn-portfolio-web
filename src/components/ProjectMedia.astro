@@ -1,0 +1,75 @@
+---
+// 项目图组：渲染项目的公开图片类素材（网格 + 图注）。
+// 过滤口径统一在 lib/projects.ts 的 galleryOf()，页面侧用它做空值守卫。
+import type { Project } from '../lib/projects';
+import { galleryOf, mediaUrl } from '../lib/projects';
+
+interface Props {
+  project: Project;
+  /** 是否从图组中排除封面（封面已在 header / 展映区块单独展示时设 true） */
+  excludeCover?: boolean;
+  /** 图组布局：grid=等宽网格（默认），masonry=瀑布流 */
+  layout?: 'grid' | 'masonry';
+}
+
+const { project, excludeCover = false, layout = 'grid' } = Astro.props;
+const items = galleryOf(project).filter((m) => !(excludeCover && m.kind === 'cover'));
+const containerClass = layout === 'masonry' ? 'media-masonry' : 'media-grid';
+---
+
+{
+  items.length > 0 && (
+    <div class={containerClass}>
+      {items.map((m) => (
+        <figure class="media-cell">
+          <img
+            src={mediaUrl(project, m.file)}
+            alt={m.proves}
+            loading="lazy"
+            decoding="async"
+          />
+          {m.proves && <figcaption>{m.proves}</figcaption>}
+        </figure>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1rem;
+  }
+  /* 瀑布流：CSS 多列，图片按自然高度流动，不裁切；2 列保证大图 */
+  .media-masonry {
+    column-count: 2;
+    column-gap: 1.4rem;
+    margin-top: 1rem;
+  }
+  .media-masonry .media-cell {
+    break-inside: avoid;
+    margin: 0 0 1.2rem;
+  }
+  .media-cell {
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface-raised);
+  }
+  .media-cell img { display: block; width: 100%; height: auto; }
+  .media-cell figcaption {
+    padding: 0.7rem 0.9rem;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    line-height: 1.5;
+  }
+  @media (max-width: 900px) {
+    .media-masonry { column-count: 2; }
+  }
+  @media (max-width: 560px) {
+    .media-masonry { column-count: 1; }
+  }
+</style>

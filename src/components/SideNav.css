@@ -1,0 +1,66 @@
+/* ══ 常驻侧栏（Persistent Sidebar）══ */
+/* 始终可见的左侧目录栏，紧贴顶栏底边、止于底部 loopbar，内容区让出左侧 gutter。 */
+:root {
+  --sidenav-w: 264px; /* 侧栏宽度（与 BranchedMenu width + 内边距对齐） */
+}
+
+.sidenav {
+  position: fixed;
+  top: var(--sidenav-top, calc(var(--topbar-h) + 1rem));
+  width: var(--sidenav-w);
+  z-index: 25;
+  /* left / top 由 JS 按内容列实时定位：左缘对齐内容左缘、顶缘对齐 hero / 概述区底线 */
+  padding: 0.5rem 0.85rem 0.5rem 0.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: transparent;
+  border-right: none;
+  /* 不压顶部栏与底部栏，留出上下呼吸 */
+  max-height: calc(100dvh - var(--sidenav-top, calc(var(--topbar-h) + 1rem)) - 1rem);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidenav::-webkit-scrollbar {
+  width: 6px;
+}
+.sidenav::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+.sidenav__title {
+  margin: 0 0 1.1rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* 侧栏内的 BranchedMenu 微调：贴合暗色面板 */
+.sidenav .branched-menu {
+  --bm-ink: #e9eaec;
+  --bm-accent: #00b894;
+  --bm-line: #3a3f47;
+}
+
+/* 内容区为叠在其左侧的常驻侧栏预留留白：侧栏不再独占左 gutter，而是浮在内容列左侧的空白带上。
+   内容右移后，滚动时侧栏覆盖的始终是左侧留白而非正文。 */
+@media (min-width: 981px) {
+  .page.has-sidenav .page-body,
+  .page.has-sidenav .page-inner.detail {
+    padding-left: calc(var(--sidenav-w) + 1.75rem);
+  }
+}
+
+@media (max-width: 980px) {
+  .sidenav {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidenav .branched-menu__marker,
+  .sidenav .branched-menu__reach {
+    transition: none;
+  }
+}

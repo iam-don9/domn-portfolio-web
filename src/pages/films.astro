@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TitleCard from '../components/TitleCard.astro';
+import SectionGroup from '../components/SectionGroup.astro';
+import { getProjects, coverOf, mediaUrl } from '../lib/projects';
+import { getSection } from '../lib/sections';
+import { buildSectionNav } from '../lib/sidenav';
+
+const sec = getSection('films');
+const all = await getProjects();
+const films = all
+  .filter((p) => p.data.type === 'ai-video')
+  .sort((a, b) => (a.data.order ?? 99) - (b.data.order ?? 99));
+
+// A 成品短片：放映厅；C 练习片段
+const screenings = films.filter((f) => f.data.workKind === '成品片');
+const drills = films.filter((f) => f.data.workKind === '练习片段');
+
+// B 角色PV：角色设计类目归入 films 区，作为「角色演出」单独成块
+const characterPVs = all
+  .filter((p) => p.data.type === 'character-design')
+  .sort((a, b) => (a.data.order ?? 99) - (b.data.order ?? 99));
+
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+const toItems = (list: typeof films) =>
+  list.map((f) => {
+    const cover = coverOf(f);
+    const coverUrl = cover ? mediaUrl(f, cover.file) : null;
+    return {
+      href: `/films/${f.id}`,
+      coverUrl,
+      title: f.data.title,
+      titleEn: f.data.titleEn ?? '',
+      eyebrow: [f.data.category, f.data.year].filter(Boolean).join(' · '),
+      desc: f.data.statement,
+      flag: f.data.workKind,
+      meta: [f.data.duration ? fmt(f.data.duration) : null, ...(f.data.tools ?? [])].filter(Boolean) as string[],
+    };
+  });
+
+const toPVItems = (list: typeof characterPVs) =>
+  list.map((p) => {
+    const cover = coverOf(p);
+    const coverUrl = cover ? mediaUrl(p, cover.file) : null;
+    return {
+      href: `/films/${p.id}`,
+      coverUrl,
+      title: p.data.title,
+      titleEn: p.data.titleEn ?? '',
+      eyebrow: [p.data.category, p.data.year].filter(Boolean).join(' · '),
+      desc: p.data.statement,
+      flag: '角色PV',
+      meta: (p.data.tools ?? []).slice(0, 3),
+    };
+  });
+
+// 常驻侧栏：板块页 → 项目种类 + 项目（与下方 SectionGroup 分组一致）
+const sectionNav = buildSectionNav([
+  {
+    label: 'A 成品短片 · CINEMATIC SCREENING',
+    target: 'sec-A',
+    items: toItems(screenings).map((f) => ({ value: f.href, label: f.title })),
+  },
+  {
+    label: 'B 角色PV · CHARACTER PV',
+    target: 'sec-B',
+    items: toPVItems(characterPVs).map((p) => ({ value: p.href, label: p.title })),
+  },
+  {
+    label: 'C 练习片段 · DRILLS',
+    target: 'sec-C',
+    items: toItems(drills).map((f) => ({ value: f.href, label: f.title })),
+  },
+]);
+---
+
+<BaseLayout
+  title="AI 短片"
+  activeSection="films"
+  sideNav={sectionNav}
+  sideNavActive={Astro.url.pathname}
+  sideNavKind="section"
+>
+  <div class="page-inner">
+
+    <TitleCard
+      num={sec.num}
+      label={sec.label}
+      labelCn={sec.labelCn}
+      title={sec.label}
+      lede={`高保真暗房放映厅（Cinematic Screening Room）——用生成式工具当摄制组拍出的短片。`}
+      video={sec.video}
+    />
+
+    <div class="page-body">
+      <SectionGroup
+        index="A"
+        id="sec-A"
+        label="成品短片"
+        labelEn="CINEMATIC SCREENING"
+        intro="高保真暗房放映厅的成片——用生成式工具当摄制组，拍出来的已完成短片。"
+        items={toItems(screenings)}
+      />
+
+      <SectionGroup
+        index="B"
+        id="sec-B"
+        label="角色PV"
+        labelEn="CHARACTER PV"
+        intro="角色演出与亮相——为 IP 角色打造的展示型短片，把长相与性格一次立住。"
+        items={toPVItems(characterPVs)}
+      />
+
+      <SectionGroup
+        index="C"
+        id="sec-C"
+        label="练习片段"
+        labelEn="DRILLS"
+        intro="技术练习与实验片段——日常打磨镜头语言、表演与特效手感的训练场。"
+        items={toItems(drills)}
+      />
+    </div>
+  </div>
+</BaseLayout>

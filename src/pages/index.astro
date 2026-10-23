@@ -1,0 +1,1106 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HomeLogoLoop from '../components/HomeLogoLoop';
+import ParticleText from '../components/react-bits/ParticleText.jsx';
+import Lanyard from '../components/Lanyard.jsx';
+import ProfileOperatorMerge from '../components/ProfileOperatorMerge.astro';
+import GridMotion from '../components/react-bits/GridMotion.jsx';
+import FeaturedGallery from '../components/FeaturedGallery.jsx';
+import LightRays from '../components/react-bits/LightRays.jsx';
+import LetterGlitch from '../components/react-bits/LetterGlitch.jsx';
+import S3Stage from '../components/S3Stage';
+import AiWorkflow from '../components/AiWorkflow.astro';
+import { IDLE_VIDEO } from '../lib/sections';
+import { getCollection } from 'astro:content';
+
+const profile = (await getCollection('profile'))[0];
+
+// ── ② 精选作品 · 流动画廊（FlexCarousel）──
+//    固定 5 条：进化论：牧狼人（猫鹰对决 / 雪兔逃亡 / 游隼修行）→ 雨巷 → 十二大战。
+//    竖屏封面（3:4）取自 AIGC 超短片资产库；点击卡片弹出对应 B 站成片。
+//    三个进化论片段在标题下带说明「进化论：牧狼人」。
+
+/** B 站视频页链接 → 播放器嵌入链接；无法识别时原样返回。 */
+function toEmbed(url?: string): string {
+  if (!url) return '';
+  const bv = url.match(/(BV[0-9A-Za-z]{10})/);
+  if (bv) return `https://player.bilibili.com/player.html?bvid=${bv[1]}&page=1&high_quality=1&danmaku=0`;
+  return url;
+}
+
+// S2 画廊固定封面清单（竖屏 3:4）。description 仅进化论三片段带「进化论：牧狼人」说明。
+// detail = 对应影片实践详情页路由（实践板块 /films 下的详情页）。
+const FEATURED_COVERS = [
+  { file: '/media/featured/mao-ying-duel.png',       text: '猫鹰对决', description: '进化论：牧狼人', bvid: 'BV1nrpm6FEJv', detail: '/films/evolution-wolf-herder' },
+  { file: '/media/featured/xue-tu-escape.png',       text: '雪兔逃亡', description: '进化论：牧狼人', bvid: 'BV1sYpm6vEAX', detail: '/films/evolution-wolf-herder' },
+  { file: '/media/featured/you-sun-cultivation.png', text: '游隼修行', description: '进化论：牧狼人', bvid: 'BV1EjJ262EMW', detail: '/films/evolution-wolf-herder' },
+  { file: '/media/featured/yu-xiang.png',            text: '雨巷',     description: '',                bvid: 'BV1WYpm6vEC4', detail: '/films/rain-alley' },
+  { file: '/media/featured/shi-er-zhan.png',         text: '十二大战', description: '',                bvid: 'BV1bWpm6rEVC', detail: '/films/zodiac-war' },
+];
+
+// ── ②′ 流动画廊：固定封面清单，携带 B 站 embed + 详情页路由供点开播视频 ──
+const featuredGalleryItems = FEATURED_COVERS.map((it) => ({
+  image: it.file,
+  text: it.text,
+  description: it.description,
+  alt: it.text,
+  embed: toEmbed(`https://www.bilibili.com/video/${it.bvid}`),
+  detailUrl: it.detail,
+}));
+
+// ── ③ 自研 skill · 多分类文件夹（封面比例卡片 + 点击弹窗）──
+const skillCategories = [
+  {
+    label: '电影导演语言',
+    en: 'CINEMATIC DIRECTION',
+    intro: '把导演的视听意图翻译成 AI 视频模型能稳定执行的提示词与分镜。',
+    skills: [
+      {
+        name: '人物展示动画导演',
+        en: 'domn-film-character-showcase',
+        cover: '/media/covers/domn-film-character-showcase.webp',
+        desc: '为 AI 视频生成「角色展示 / 亮相 / 英雄 PV」的提示词与分镜；从角色档案八项提取，套用展示原型与四拍结构，解决看完记不住脸、不知道他会什么。',
+        highlights: [
+          '角色档案八项 + 八类展示原型（王者荣耀型 / 鬼泣型 / 压迫登场型）',
+          '四拍结构 S0 悬念 → S1 登场 → S2 展示 → S3 签名定格',
+          '全程无字幕、画风随角色而定、一致性三锚点',
+        ],
+        github: 'https://github.com/iam-don9/domn-film-character-showcase',
+      },
+      {
+        name: '武打动作导演',
+        en: 'domn-film-action-director',
+        cover: '/media/covers/domn-film-action-director.webp',
+        desc: '为 AI 视频生成或补强打戏 / 武打 / 战斗分镜提示词，并诊断发飘 / 不丝滑 / 没打击感 / 回原点 / 空放特效 / 缠斗糊成一团等病症，给出改写稿。',
+        highlights: [
+          '三层架构（动作层 > 结构层 > 呈现层）：先让打斗成立再让它燃',
+          '接触链 + 回合节奏 + 重击三档，每帧有明确因果',
+          '针对发飘 / 空放特效 / 缠斗糊团等病症的改写库',
+        ],
+        github: 'https://github.com/iam-don9/domn-film-action-director',
+      },
+      {
+        name: '提示词情绪审查',
+        en: 'domn-director-emotion-review',
+        cover: '/media/covers/domn-director-emotion-review.webp',
+        desc: '审查情绪驱动的戏剧场景（微动作真实性、可玩目标、对白节奏、电影连续性）。接受剧本 / 场景 / 分镜 / 视频提示词文本，先判定源形式再返回对应分支修订。',
+        highlights: [
+          '先分类（剧本 vs 视频提示词 vs 混合），绝不混淆两类',
+          '情绪脊柱 + 六通道微动作审计（眼 / 睑 / 嘴 / 呼吸 / 声 / 身）',
+          '源形式保留，不擅自改写体裁',
+        ],
+        github: 'https://github.com/iam-don9/domn-director-emotion-review',
+      },
+    ],
+  },
+  {
+    label: '影片创作',
+    en: 'FILMMAKING',
+    intro: '从剧本结构到成片格式，覆盖 AI 短片全流程的导演技法与工程参数。',
+    skills: [
+      {
+        name: '科幻短片导演',
+        en: 'domn-film-scifi-short-film',
+        cover: '/media/covers/domn-film-scifi-short-film.webp',
+        desc: '为 AI 视频生成科幻短片的世界观与镜头：从冷峻工业光到巨物奇观，建立可复现的科幻视觉语法。',
+        highlights: [
+          '冷调工业光 + 巨物尺度的视觉语法',
+          '飞船 / 废土 / 近未来都市的镜头模板',
+          '物理可信度审查，避免空泛炫技',
+        ],
+      },
+      {
+        name: '剧本结构 · 救猫咪',
+        en: 'domn-film-screenplay-save-the-cat',
+        cover: '/media/covers/domn-film-screenplay-save-the-cat.webp',
+        desc: '把救猫咪节拍表翻译成 AI 视频的分镜与提示词，让短片有清晰的情绪曲线与转折。',
+        highlights: [
+          '15 节拍 → 分镜时序映射',
+          '主角的被召唤时刻强化',
+          '情绪曲线不塌、转折不硬',
+        ],
+      },
+      {
+        name: 'Seedance 格式工程',
+        en: 'domn-film-seedance-format',
+        cover: '/media/covers/domn-film-seedance-format.webp',
+        desc: '针对 Seedance 2.5 的格式与参数调校：镜头时长、运镜语法、首尾帧约束，提升一次通过率。',
+        highlights: [
+          '镜头时长与运镜语法模板',
+          '首尾帧约束减少跳变',
+          '近身交锋与体量差的实战参数',
+        ],
+      },
+      {
+        name: '变身导演',
+        en: 'domn-film-henshin-director',
+        cover: '/media/covers/domn-film-henshin-director.webp',
+        desc: '为 AI 视频设计变身 / 觉醒高光时刻：光效爆发、形体重构、镜头环绕的节奏编排。',
+        highlights: [
+          '光爆 + 形体重构的爆发节奏',
+          '环绕镜头与定格签名',
+          '变身前后一致性锚点',
+        ],
+      },
+      {
+        name: '风格解构',
+        en: 'domn-film-style-deconstruct',
+        cover: '/media/covers/domn-film-style-deconstruct.webp',
+        desc: '把一种视觉风格拆成可复用的要素包：色彩、笔触、光影、材质，供 AI 稳定复述。',
+        highlights: [
+          '风格要素解构清单',
+          '色彩 / 笔触 / 材质三轴',
+          '跨镜头风格一致性',
+        ],
+      },
+      {
+        name: '假面骑士风导演',
+        en: 'domn-film-kamen-raider',
+        cover: '/media/covers/domn-film-kamen-raider.webp',
+        desc: '特摄风变身与战斗：皮套质感、变身音效节奏、骑士踢的镜头语言。',
+        highlights: [
+          '特摄皮套质感与打光',
+          '变身音效的镜头对位',
+          '骑士踢定格签名',
+        ],
+      },
+      {
+        name: '反讽升级',
+        en: 'domn-film-ironic-upgrade',
+        cover: '/media/covers/domn-film-ironic-upgrade.webp',
+        desc: '用反讽叙事做升级流短片：预期反转、荒诞递进、结尾回扣。',
+        highlights: [
+          '预期反转的节奏设计',
+          '荒诞递进不烂尾',
+          '结尾回扣的钩子',
+        ],
+      },
+    ],
+  },
+  {
+    label: 'IP 与角色',
+    en: 'IP & CHARACTER',
+    intro: '从 IP 视觉到角色海报与贴纸，沉淀可复用的视觉资产。',
+    skills: [
+      {
+        name: 'IP 视觉',
+        en: 'domn-ip-visual',
+        cover: '/media/covers/domn-ip-visual.webp',
+        desc: '从零定义 IP 的视觉系统：角色三视图、色彩板、标志性符号，沉淀为可复用的品牌资产。',
+        highlights: [
+          '角色三视图 + 色彩板',
+          '标志性符号提取',
+          '跨媒介一致性',
+        ],
+      },
+      {
+        name: '角色海报',
+        en: 'domn-character-poster',
+        cover: '/media/covers/domn-character-poster.webp',
+        desc: '为角色生成电影感海报：构图、光影、标语排版，一张图讲清角色定位。',
+        highlights: [
+          '电影感构图与光影',
+          '标语排版',
+          '角色定位一眼可读',
+        ],
+      },
+      {
+        name: 'IP 贴纸生成器',
+        en: 'domn-image-ipsticker-generator',
+        cover: '/media/covers/domn-image-ipsticker-generator.webp',
+        desc: '批量生成 IP 衍生贴纸：统一描边、透明底、系列化，直接进社群与周边。',
+        highlights: [
+          '统一描边与透明底',
+          '系列化模板',
+          '社群 / 周边直出',
+        ],
+      },
+      {
+        name: '通用封面',
+        en: 'domn-cover',
+        cover: '/media/covers/domn-cover.webp',
+        desc: '通用项目封面生成：按需适配比例与基调，快速产出可用于各平台的封面图。',
+        highlights: [
+          '比例自适应',
+          '基调可控',
+          '多平台直出',
+        ],
+      },
+    ],
+  },
+];
+
+// ── ⑤ 个人简介 hero + 画廊背景：吊卡图与流体画廊占位 ──
+const CARD_FRONT = '/media/lanyard/front.png';   // 水母头男孩
+const CARD_BACK = '/media/lanyard/back.jpg';      // 个人形象 avatar
+const CARD_STRAP = '/media/lanyard/strap.png';    // 几何符号 LOGO → 织带
+
+const s5GridMotionItems = [
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___3074ef50-7f7f-4fe8-9e0c-4b9e2de01c08.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___354437a0-33de-4683-9e58-d0cd8b869dd4.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___39e05216-3b15-45b8-9390-1782a8f39416.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___5cb97a97-3100-463e-9e1c-881b331a694c.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___772ff6d0-aa33-4d73-a3ba-9d7c0bc06f84.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___8e35dcca-0906-43bd-9492-a83a50695d17.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___b156294d-0cf9-4b88-abf4-0ddc5b29de57.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___b7376f43-737e-44f6-a410-f5001033679a.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___ca1e49a8-1cb9-4230-aa20-21ad661ba198.png',
+  '/media/s5-gridmotion/bj008z6q2f48__3-5___ff58a421-8652-4646-b545-62ba22c59bc7.png',
+  '/media/s5-gridmotion/bj008z6q2f48__ace72e34-c8d4-4d52-b2d7-e8db5e098a1e.png',
+  '/media/s5-gridmotion/bj008z6q2f48_A_calm_young_man_around_25-30_years_old_in_a_black_2a84be50-3d40-4da1-b015-d0d7f35d0c43.png',
+  '/media/s5-gridmotion/bj008z6q2f48_Cheerful_young_woman_short_dark_windblown_hair_yel_f2bb9c58-383e-4f17-b505-4f97274e37a6.png',
+  '/media/s5-gridmotion/bj008z6q2f48_cyberpunk_astronnaut_full_body_shot_realistic_face_82d6e256-3eb5-43ab-8939-7ea19d9079d4.png',
+  '/media/s5-gridmotion/bj008z6q2f48_Digital_painting_Mobius_art_style_retro_futurism_s_3f7a0ffc-ae41-4835-b678-bcf81c440f65.png',
+  '/media/s5-gridmotion/bj008z6q2f48_Full_body_shot._A_young_gentle_oriental_female_spi_dc1712b3-1349-44ab-96df-c3f018ac0531.png',
+  '/media/s5-gridmotion/bj008z6q2f48_Photorealistic_cinematic_medium_shot_of_a_beautifu_547a7206-c2db-453c-b746-48dc5c0f0c6f.png',
+  '/media/s5-gridmotion/bj008z6q2f48_Real_front_view_cute_cyber_female_image_cyber_styl_a5165067-c152-4c72-b079-5dd18cadeb72.png',
+  '/media/s5-gridmotion/bj008z6q2f48_short_tousled_black_hair_fluffy_layered_strands_vi_6fca616d-14ce-4525-bbd6-19e2607bbed2.png',
+  '/media/s5-gridmotion/bj008z6q2f48_Ultra_wide_environmental_documentary_snapshot_thre_3d0e776b-5255-48a6-83da-aeebc68cc5bc.png',
+  '/media/s5-gridmotion/bj008z6q2f48_young_anime_adventurer_character_a_man_with_glasse_6a28a073-29f7-48d4-accf-831d283fa38d.png',
+  '/media/s5-gridmotion/bj008z6q2f48_young_anime_adventurer_character_a_man_with_glasse_932039af-7fd5-4d47-98ba-3e9b3c50987a.png',
+  '/media/s5-gridmotion/bj008z6q2f48_young_anime_adventurer_character_expressive_large__28be86f7-c444-499f-853e-3a1cfff1cb86.png',
+  '/media/s5-gridmotion/bj008z6q2f48_young_anime_adventurer_character_expressive_large__9843cfa3-74e3-4519-9e3d-c17fcdfa9771.png',
+];
+
+// S5 平台入口：三平台图标（小红书 / B站 / GitHub）—— 个人主页外链
+const socials = [
+  { name: '小红书', href: 'https://xhslink.cn/o/4NsqIOMhc9I' },
+  { name: 'B站', href: 'https://b23.tv/kOTHMh6' },
+  { name: 'GitHub', href: 'https://github.com/iam-don9' },
+];
+---
+
+<BaseLayout title="生成式剧场">
+  <!-- ══ 首页 = 原生 scroll-snap 全屏 slide deck：每个组件占一屏 ══ -->
+  <div class="deck">
+
+    <!-- ══ Slide 1 · 英雄区（不改）══ -->
+    <section class="slide hero-scene">
+      <div class="stage" id="domn-stage" transition:persist aria-hidden="true">
+        <div class="stage-frame">
+          <canvas id="stage-canvas"></canvas>
+          <div class="stage-fallback">
+            <video data-index="0" src={IDLE_VIDEO} muted autoplay loop playsinline preload="auto" class="is-on"></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-inner home">
+        <div class="home-content">
+          <div class="home-hero">
+            <h1 class="sr-only">Dwell On My Nature</h1>
+            <div class="home-title-visual" aria-hidden="true">
+              <ParticleText
+                client:load
+                text={"DWELL\nON\nMY\nNATURE"}
+                particleSize={3}
+                density={5}
+                color="#f4f5f7"
+                highlightColor="#10b981"
+                highlightMode="motion"
+                shape="line"
+                intro="none"
+                scatter={120}
+                gatherDuration={620}
+                stagger={620}
+                clickBurst
+                burstStrength={0.8}
+                pointerRepel={24}
+                repelRadius={220}
+                idleDrift={0}
+                trigger="mount"
+                fontFamily="var(--font-display)"
+                fontSize="clamp(3.25rem, 8.4vw, 15rem)"
+                fontWeight={400}
+                letterSpacing={0.12}
+                lineHeight={1.04}
+                align="left"
+                bleed={240}
+                glow={false}
+                className="home-particle"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="loopbar" id="domn-loopbar" transition:persist>
+        <HomeLogoLoop client:load />
+      </div>
+    </section>
+
+    <!-- ══ Slide 2 · 精选作品 · 弧形画廊（全宽，点开播 B 站成片）══ -->
+    <section class="slide featured-slide" id="featured">
+      <!-- S2 背景：LightRays 着色器光束（品牌青绿，跟随光标 / 点击脉冲），纯装饰不拦截交互 -->
+      <div class="featured-bg" aria-hidden="true">
+        <LightRays
+          client:load
+          raysOrigin="top-center"
+          raysColor="#00B894"
+          raysSpeed={1}
+          lightSpread={0.6}
+          rayLength={3}
+          rayDensity={1.1}
+          glow={0.7}
+          haze={0.3}
+          atmosphere={1}
+          intensity={1}
+          followMouse={true}
+          mouseInfluence={0.12}
+          cursorShadow={false}
+          clickPulse={true}
+          opacity={1}
+        />
+      </div>
+      <!-- 屏头：居中限宽，与全站屏头一致 -->
+      <div class="featured-head">
+        <header class="slide-head">
+          <div class="slide-head__t">
+            <p class="slide-eyebrow">FEATURED</p>
+            <h2 class="slide-title">精选作品</h2>
+          </div>
+        </header>
+        <a class="featured-more" href="/films">
+          <span>更多作品</span>
+          <svg class="featured-more__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h9M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </div>
+      <!-- 画廊：全宽铺满屏头以下剩余空间 -->
+      <div class="featured-gallery">
+        <FeaturedGallery client:load items={featuredGalleryItems} />
+      </div>
+    </section>
+
+    <!-- ══ Slide 3 · 自研 skill（多分类文件夹：封面卡片 + 点击弹窗）══ -->
+    <section class="slide skill-slide" id="skills">
+      <!-- S3 背景层：LetterGlitch 字符故障着色器（字符在纯黑底上闪烁/流动） -->
+      <div class="skill-bg" aria-hidden="true">
+        <LetterGlitch
+          client:load
+          glitchColors={['#ffffff', '#00B894']}
+          baseColor="#ffffff"
+          backgroundColor="#000000"
+          fontSize={14}
+          density={0.9}
+          baseOpacity={0.16}
+          glitchAmount={0.45}
+          speed={0.9}
+          flow={0.5}
+          centerFade={0.55}
+          edgeFade={0.12}
+          interactive={true}
+          clickEffect="tear"
+        />
+      </div>
+      <div class="slide-inner skill-inner">
+        <header class="slide-head">
+          <div class="slide-head__t">
+            <p class="slide-eyebrow">MY SKILLS</p>
+            <h2 class="slide-title">自研技能</h2>
+          </div>
+        </header>
+        <S3Stage categories={skillCategories} client:load />
+      </div>
+    </section>
+
+    <!-- ══ Slide 4 · 个人 AI 视频创作工作流（流线型，以雨巷为例）══ -->
+    <AiWorkflow />
+
+    <!-- ══ Slide 5 · 个人简介 hero + 画廊背景（画廊作装饰）══ -->
+    <section class="slide about-slide bio-slide" id="about">
+      <!-- GridMotion 作为背景装饰：固定方向自动行进，压暗保证文字可读 -->
+      <div class="bio-gallery" aria-hidden="true">
+        <GridMotion
+          client:load
+          items={s5GridMotionItems}
+          rows={5}
+          aspectRatio={1.15}
+          gap={14}
+          radius={10}
+          angle={-18}
+          tilt={18}
+          speed={18}
+          direction="alternate"
+          spotlight={0.72}
+          grayscale
+          fade={0.42}
+          dim={0.18}
+        />
+      </div>
+      <div class="bio-scrim" aria-hidden="true"></div>
+      <!-- 吊卡：保留个人名片的轻交互 -->
+      <div class="bio-lanyard" aria-hidden="true">
+        <Lanyard
+          client:load
+          frontImage={CARD_FRONT}
+          backImage={CARD_BACK}
+          strapImage={CARD_STRAP}
+          cardColor="#0c0e11"
+          anchor="right"
+          size={0.26}
+          strapLength={0.5}
+          gravity={1.6}
+          interactive={true}
+          breeze={0.5}
+          style={{}}
+        />
+      </div>
+
+      <div class="slide-inner about-inner">
+        <div class="hero-cover reveal">
+          <div class="hero-bigtype" aria-hidden="true">HI, I'M<br />DOMN</div>
+          <div class="hero-copy">
+            <h1 class="page-title hero-name">{profile.data.name}</h1>
+            <p class="page-lede hero-tagline">
+              I'm a
+              <span class="hero-tagbox">
+                <span class="hero-typed" data-tags='["AIGC 创作者","AI 视频编导","AGI 探索者","建筑智能化工程师"]' aria-hidden="true"></span><span class="hero-caret" aria-hidden="true"></span>
+                <span class="sr-only">AIGC 创作者 / AI 视频编导 / AGI 探索者 / 建筑智能化工程师</span>
+              </span>
+            </p>
+            <p class="hero-manifesto">十年工程设计管理，转向 AIGC 创作，用 AI 改写仕途。</p>
+            <button class="resume-trigger" type="button" data-resume-open aria-haspopup="dialog">
+              <span>查看个人简历</span>
+              <svg class="resume-trigger__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 8h9M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <div class="platform-links" aria-label="平台链接">
+              {
+                socials.map((s) => (
+                  <a class="platform-link" href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name} title={s.name}>
+                    {s.name === 'GitHub' ? (
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17 4.6 18 4.9 18 4.9c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z" fill="currentColor" stroke="none" /></svg>
+                    ) : s.name === 'B站' ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+                        <path d="M7 3l3 3M17 3l-3 3" />
+                        <rect x="3" y="6" width="18" height="14" rx="3" />
+                        <path d="M9 13h.01M15 13h.01" />
+                        <path d="M9.5 16c1.2-1 4.3-1 5.5 0" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                        <rect x="4" y="3" width="16" height="18" rx="3" />
+                        <path d="M12 3v18" />
+                      </svg>
+                    )}
+                    <span class="platform-link__txt">{s.name}</span>
+                  </a>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 个人简历：从滑屏中移入 S5 触发的弹窗，内容仍复用原简历组件 -->
+  <div class="resume-modal" data-resume-modal hidden aria-hidden="true">
+    <button class="resume-modal__backdrop" type="button" data-resume-close aria-label="关闭个人简历"></button>
+    <div class="resume-modal__panel" role="dialog" aria-modal="true" aria-labelledby="resume-modal-title" tabindex="-1">
+      <h2 class="sr-only" id="resume-modal-title">个人简历</h2>
+      <button class="resume-modal__close" type="button" data-resume-close aria-label="关闭个人简历">×</button>
+      <ProfileOperatorMerge />
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const el = document.querySelector('.hero-typed');
+      if (!el) return;
+      let tags;
+      try { tags = JSON.parse(el.getAttribute('data-tags') || '[]'); } catch { tags = []; }
+      if (!tags.length) return;
+
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) { el.textContent = tags[0]; return; }
+
+      // Stable field：预留最宽标签宽度，打字时框不再伸缩（消除 CLS / 抖动）
+      const box = el.closest('.hero-tagbox');
+      function reserveWidth() {
+        if (!box) return;
+        const cs = getComputedStyle(el);
+        const probe = document.createElement('span');
+        probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;';
+        probe.style.fontFamily = cs.fontFamily;
+        probe.style.fontSize = cs.fontSize;
+        probe.style.fontWeight = cs.fontWeight;
+        probe.style.fontStyle = cs.fontStyle;
+        probe.style.letterSpacing = cs.letterSpacing;
+        document.body.appendChild(probe);
+        let max = 0;
+        tags.forEach((t) => { probe.textContent = t; max = Math.max(max, probe.offsetWidth); });
+        probe.remove();
+        if (max) box.style.minWidth = (max + 28) + 'px';
+      }
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserveWidth);
+      else reserveWidth();
+
+      // 拟人节奏：基础速度带轻微抖动，每打几字“想一下”，删字更快，落定后停一会
+      const TYPE_MIN = 52, TYPE_MAX = 96, DEL_MIN = 24, DEL_MAX = 46, HOLD = 1450, GAP = 240, THINK = 230;
+      let ti = 0, ci = 0, deleting = false;
+      const rand = (a, b) => a + Math.random() * (b - a);
+      function tick() {
+        const cur = tags[ti];
+        if (!deleting) {
+          ci++;
+          el.textContent = cur.slice(0, ci);
+          if (ci >= cur.length) {
+            deleting = true;
+            return setTimeout(tick, HOLD);
+          }
+          const pause = (ci % 4 === 0) ? THINK : 0;
+          return setTimeout(tick, rand(TYPE_MIN, TYPE_MAX) + pause);
+        }
+        ci--;
+        el.textContent = cur.slice(0, ci);
+        if (ci <= 0) { deleting = false; ti = (ti + 1) % tags.length; return setTimeout(tick, GAP); }
+        return setTimeout(tick, rand(DEL_MIN, DEL_MAX));
+      }
+      tick();
+    })();
+  </script>
+
+  <script>
+    const resumeModal = document.querySelector('[data-resume-modal]');
+    const resumeOpeners = document.querySelectorAll('[data-resume-open]');
+    const resumeClosers = document.querySelectorAll('[data-resume-close]');
+    let resumeLastFocus = null;
+
+    if (resumeModal instanceof HTMLElement) {
+      const openResume = () => {
+        resumeLastFocus = document.activeElement;
+        resumeModal.hidden = false;
+        resumeModal.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('resume-modal-open');
+        requestAnimationFrame(() => {
+          resumeModal.classList.add('is-open');
+          requestAnimationFrame(() => {
+            if (resumeModal.classList.contains('is-open')) {
+              resumeModal.querySelector('.resume-modal__close')?.focus();
+            }
+          });
+        });
+      };
+
+      const closeResume = () => {
+        resumeModal.classList.remove('is-open');
+        resumeModal.setAttribute('aria-hidden', 'true');
+        document.documentElement.classList.remove('resume-modal-open');
+        window.setTimeout(() => { resumeModal.hidden = true; }, 220);
+        if (resumeLastFocus instanceof HTMLElement) resumeLastFocus.focus();
+      };
+
+      resumeOpeners.forEach((opener) => opener.addEventListener('click', openResume));
+      resumeClosers.forEach((closer) => closer.addEventListener('click', closeResume));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && resumeModal.classList.contains('is-open')) closeResume();
+      });
+    }
+  </script>
+</BaseLayout>
+
+<style>
+  /* .deck 已不作为固定滚动容器：scroll-snap 改挂 html:has(body.is-home)（global.css），
+     S1↔S2 强制逐屏翻页，S3↓ 由 window 连续长滚。.deck 仅保留为语义包裹 div。 */
+  .slide {
+    position: relative;
+    overflow: visible;                /* 放开裁切，允许纪念碑大字 / 编号 / 绿脊线越过屏间接缝 */
+    display: flex;
+    flex-direction: column;
+    scroll-snap-align: start;         /* 统一竖向满屏滑页：每个板块都是一个 snap 子元素 */
+    scroll-snap-stop: always;          /* 每次只翻一屏，整页节奏一致 */
+  }
+  .slide--center { justify-content: center; }
+
+  /* S1 · Hero：滑页首面板（满屏 + 吸附 + 强制逐屏翻）；S1→S2 同为 snap 面板 */
+  .hero-scene {
+    height: 100dvh;
+    min-height: 100dvh;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    overflow: hidden;
+    background: #000000;              /* 杠杆3：S1 英雄区强制纯黑（其余屏近黑） */
+  }
+  /* S2 · 精选作品：满屏滑页第二面板 */
+  .featured-slide {
+    min-height: 100dvh;
+    scroll-snap-align: start;
+    background: #000;                 /* 纯黑衬底，让 LightRays 青绿光束透出 */
+  }
+  /* S2 背景层：LightRays 着色器铺满整屏，置于内容之下、不可交互 */
+  .featured-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.92;                   /* 略压一档，保证放映厅 UI 仍是视觉焦点 */
+  }
+  .featured-bg :global(.light-rays),
+  .featured-bg :global(.light-rays__canvas) {
+    width: 100%;
+    height: 100%;
+  }
+  .skill-slide {
+    min-height: 100dvh;
+    scroll-snap-align: start;
+    background: #000000;              /* S3 强制纯黑：遮住底层生成式氛围层（与 S1/S2 一致） */
+  }
+  /* S3 背景层：LetterGlitch 铺满整屏，置于内容之下、不可交互。
+     ⚠️ 组件自身监听 window 的 pointermove，故 pointer-events:none 不影响光标交互。 */
+  .skill-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .skill-bg :global(.letter-glitch),
+  .skill-bg :global(.letter-glitch-canvas) {
+    width: 100%;
+    height: 100%;
+  }
+  /* S3 · 自研技能：标题在上，多分类文件夹 + 网格 + 弹窗居中 */
+  .skill-inner {
+    justify-content: flex-start;
+    gap: clamp(1rem, 3vh, 2rem);
+    position: relative;                /* ⚠️ z-index 必须配 position 才生效，否则被背景层盖住 */
+    z-index: 2;
+  }
+
+  .slide-inner {
+    flex: 1;
+    width: min(100%, var(--content-w));
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding: calc(var(--topbar-h) + clamp(1rem, 2.6vh, 2.2rem)) clamp(1.5rem, 4vw, 4.5rem) clamp(1.2rem, 3vh, 2.4rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;   /* 屏头置顶，内容在剩余空间内居中（见各 .*-inner 内容区 margin:auto 0） */
+    min-height: 0;
+  }
+
+  /* ── S1 hero 内容：常显（首屏即满血，不依赖 .is-active 沉浮）── */
+  .home {
+    display: flex;
+    align-items: center;
+    min-height: 100vh;
+    width: min(100%, 88vw);
+  }
+  .home-content {
+    width: 100%;
+    max-width: 70vw;
+    margin-left: clamp(3rem, 9vw, 12rem);
+  }
+  .home-hero {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.8rem, 1.6vw, 1.5rem);
+  }
+  .home-title-visual {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    min-height: clamp(17rem, 43vw, 42rem);
+    text-align: left;
+  }
+
+  /* 屏幕阅读器可见、视觉隐藏 */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0);
+    white-space: nowrap; border: 0;
+  }
+
+  @media (max-width: 900px) {
+    .home { align-items: flex-start; }
+    .home-content { margin-left: 0; max-width: 100%; }
+  }
+
+  /* ── 英雄区容器 ── */
+  .hero-scene {
+    overflow: hidden;
+  }
+
+  /* ── S2 · 精选作品：屏头居中限宽，画廊全宽铺满剩余空间 ── */
+  .featured-head {
+    position: relative;             /* 抬到背景层之上（z-index 需要定位于生效） */
+    z-index: 2;
+    flex: 0 0 auto;
+    width: min(100%, var(--content-w));
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding: calc(var(--topbar-h) + clamp(1rem, 2.6vh, 2.2rem)) clamp(1.5rem, 4vw, 4.5rem) clamp(0.5rem, 1.4vh, 1rem);
+  }
+  /* S2 屏头下方引导按钮：跳转到实践板块（/films） */
+  .featured-more {
+    display: flex;
+    width: fit-content;
+    margin-right: auto;            /* 左对齐，紧贴左对齐的屏头标题正下方 */
+    align-items: center;
+    gap: 0.5em;
+    margin-top: clamp(0.9rem, 2vh, 1.6rem);
+    padding: 0.6em 1.25em;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--accent-strong);
+    font-family: var(--font-cn-head);
+    font-weight: 400;
+    font-size: clamp(0.85rem, 1.4vw, 1rem);
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.25s var(--ease, ease), color 0.25s var(--ease, ease), border-color 0.25s var(--ease, ease), transform 0.25s var(--ease, ease);
+  }
+  .featured-more:hover,
+  .featured-more:focus-visible {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0a0c0e;
+    transform: translateY(-1px);
+    outline: none;
+  }
+  .featured-more__arrow {
+    transition: transform 0.25s var(--ease, ease);
+  }
+  .featured-more:hover .featured-more__arrow,
+  .featured-more:focus-visible .featured-more__arrow {
+    transform: translateX(3px);
+  }
+  /* 弧形画廊全宽：铺满屏头以下剩余空间（S2 为 flex 列，画廊 flex:1 自适应高度） */
+  .featured-gallery {
+    position: relative;
+    z-index: 2;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+  /* .fg-wrap 撑满画廊容器：绝对定位给足确定高度，避免 flex 百分比高度解析为 0 */
+  .featured-gallery :global(.fg-wrap) {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ── 统一屏头：改由 global.css 的 .slide-head / .slide-eyebrow / .slide-title 承载（去序号）── */
+
+  /* ── S5 · 个人简介 hero + 画廊背景 ── */
+  .bio-slide {
+    min-height: 100dvh;                 /* 首屏占满，简历内容接在其后 */
+    height: auto;
+    scroll-snap-align: start;
+    background: transparent;            /* 透出底层生成式氛围层 */
+  }
+  .bio-slide .slide-inner {
+    position: relative;
+    z-index: 4;                       /* 文字和 CTA 在吊卡之上，保证可读且可点击 */
+    pointer-events: none;             /* 整屏任意位置滚动页面，不被文字层截留 */
+  }
+  /* 画廊背景：铺满整屏、压暗、不可交互（纯装饰） */
+  .bio-gallery {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: auto;
+  }
+  .bio-gallery :global(.grid-motion) {
+    width: 100%;
+    height: 100%;
+  }
+  .bio-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.62), rgba(0,0,0,0.38) 45%, rgba(0,0,0,0.66)),
+      radial-gradient(120% 90% at 28% 48%, rgba(0,0,0,0.72), rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.5) 100%);
+  }
+  /* 吊卡：保留可拖拽的轻交互，置于文字之上、不挡正文 */
+  .bio-lanyard {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .bio-lanyard :global(.lanyard-canvas) {
+    pointer-events: auto;
+    cursor: grab;
+  }
+  .bio-lanyard :global(.lanyard-canvas):active { cursor: grabbing; }
+
+  /* 原 S2 排版：离栅纪念碑式英雄区（衬底字母出血 + 不对称负空间） */
+  .about-inner {
+    flex: none;
+    min-height: 100dvh;
+    justify-content: stretch;
+    padding-bottom: clamp(2.5rem, 7vh, 5rem);
+  }
+  .hero-cover {
+    position: relative;
+    flex: 1 0 auto;
+    min-height: calc(100dvh - var(--topbar-h) - 5rem);
+    display: block;
+  }
+
+  /* 衬底字母：超大描边，故意出血右缘 + 微旋，打破正交网格 */
+  .hero-bigtype {
+    position: absolute;
+    right: clamp(0.5rem, 3vw, 4rem);
+    bottom: clamp(0.5rem, 3vh, 2.5rem);
+    left: auto;
+    width: auto;
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(4.5rem, min(29vw, 35vh), 27rem);
+    line-height: 0.78;
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+    color: transparent;
+    -webkit-text-stroke: clamp(2px, 0.18vw, 4px) var(--accent-dim);
+    text-align: right;
+    pointer-events: none;
+    z-index: 0;
+    user-select: none;
+    transform: rotate(-2.5deg);
+  }
+
+  /* 文案：沉于中上、贴左，与右下出血大字形成不对称张力 */
+  .hero-copy { position: relative; z-index: 1; max-width: 34rem; margin-top: clamp(0.5rem, 7vh, 5rem); }
+  .hero-name {
+    font-family: var(--font-cn-head);
+    font-weight: 400;                 /* LogoSC 仅 400，禁止合成加粗 */
+    font-size: var(--fs-hero);        /* 首页大标题：clamp(2.5rem,6vw,5rem)，对齐 design.md 字阶 */
+    line-height: 0.98;
+    letter-spacing: 0;
+    white-space: nowrap;
+    margin: 0 0 0.9rem;
+    text-wrap: balance;
+  }
+  .hero-tagline { margin: 0 0 1rem; font-size: clamp(1.05rem, 1.9vw, 1.5rem); color: var(--text-secondary); line-height: 1.5; white-space: nowrap; }
+  /* S5 打字机标签：框内轮播，先打后删循环；accent 色突出当前身份 */
+  .hero-tagbox {
+    display: inline-flex; align-items: center;
+    margin-left: 0.35em;
+    color: var(--accent-strong); white-space: nowrap;
+    vertical-align: baseline; line-height: 1;
+  }
+  .hero-typed { font-variant-numeric: tabular-nums; }
+  /* 删空时 flex 容器会失去真实基线（退化用边框盒底缘合成），光标因此下沉；
+     挂一个零宽空格让基线永远存在，光标 x/y 恒定 */
+  .hero-typed::after { content: '\200b'; }
+  .hero-caret {
+    display: inline-block; width: 2px; height: 1.05em;
+    margin-left: 3px; background: var(--accent-strong);
+    border-radius: 1px;
+    vertical-align: -0.13em; animation: hero-blink 1.06s steps(1, end) infinite;
+  }
+  @keyframes hero-blink { 50% { opacity: 0; } }
+  .hero-role { font-family: var(--font-mono); font-size: var(--fs-small); letter-spacing: .04em; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 1.1rem; }
+  .hero-manifesto { font-size: clamp(1rem, 1.6vw, 1.35rem); line-height: 1.55; color: var(--text-primary); margin: 0; }
+  .hero-manifesto b { color: var(--accent-strong); font-weight: 400; }
+
+  .resume-trigger {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    width: fit-content;
+    margin-top: clamp(1.2rem, 2.6vh, 2rem);
+    padding: 0.72em 1.25em;
+    border: 1px solid var(--accent-strong);
+    border-radius: 999px;
+    color: #06120f;
+    font-family: var(--font-cn-head);
+    font-size: clamp(0.95rem, 1.35vw, 1.15rem);
+    letter-spacing: 0.03em;
+    line-height: 1;
+    background: var(--accent);
+    box-shadow: 0 10px 28px rgba(0, 184, 148, 0.24);
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  }
+  .resume-trigger:hover,
+  .resume-trigger:focus-visible {
+    color: #06120f;
+    background: var(--accent-strong);
+    transform: translateY(-1px);
+    outline: none;
+  }
+  .resume-trigger__arrow { transition: transform var(--dur-fast) var(--ease); }
+  .resume-trigger:hover .resume-trigger__arrow,
+  .resume-trigger:focus-visible .resume-trigger__arrow { transform: translateX(3px); }
+
+  .resume-modal {
+    --resume-gap: clamp(0.75rem, 2vw, 2.5rem);
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: calc(var(--topbar-h) + var(--resume-gap)) var(--resume-gap) var(--resume-gap);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 220ms var(--ease), visibility 220ms var(--ease);
+  }
+  .resume-modal.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .resume-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(2, 4, 5, 0.68);
+    opacity: 0;
+    backdrop-filter: blur(18px) saturate(0.76);
+    -webkit-backdrop-filter: blur(18px) saturate(0.76);
+    transition: opacity 320ms var(--ease);
+    cursor: default;
+  }
+  .resume-modal.is-open .resume-modal__backdrop { opacity: 1; }
+  .resume-modal__panel {
+    position: relative;
+    z-index: 1;
+    width: min(96vw, 3000px);
+    height: min(calc(100dvh - var(--topbar-h) - var(--resume-gap) - var(--resume-gap)), 1900px);
+    max-height: calc(100dvh - var(--topbar-h) - var(--resume-gap) - var(--resume-gap));
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg) 82%, rgba(255, 255, 255, 0.12));
+    backdrop-filter: blur(22px) saturate(0.86);
+    -webkit-backdrop-filter: blur(22px) saturate(0.86);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.54);
+    opacity: 0;
+    transform: translateY(1.2rem) scale(0.985);
+    transition: opacity 360ms var(--ease), transform 520ms var(--ease-mech);
+  }
+  .resume-modal.is-open .resume-modal__panel {
+    opacity: 1;
+    transform: none;
+  }
+  .resume-modal.is-open .resume-modal__panel :global(.mg-head),
+  .resume-modal.is-open .resume-modal__panel :global(.mg-body) {
+    animation: resume-content-in 620ms var(--ease-mech) both;
+  }
+  .resume-modal.is-open .resume-modal__panel :global(.mg-body) { animation-delay: 90ms; }
+  .resume-modal.is-open .resume-modal__panel :global(.pec-cell) {
+    animation: resume-card-in 520ms var(--ease-mech) both;
+  }
+  .resume-modal.is-open .resume-modal__panel :global(.pec-cell:nth-child(2)) { animation-delay: 90ms; }
+  .resume-modal.is-open .resume-modal__panel :global(.pec-cell:nth-child(3)) { animation-delay: 160ms; }
+  .resume-modal.is-open .resume-modal__panel :global(.pec-cell:nth-child(4)) { animation-delay: 230ms; }
+  @keyframes resume-content-in {
+    from { opacity: 0; transform: translateY(0.8rem); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes resume-card-in {
+    from { opacity: 0; transform: translateY(0.65rem) scale(0.97); }
+    to { opacity: 1; transform: none; }
+  }
+  .resume-modal__close {
+    position: absolute;
+    top: clamp(0.65rem, 1.5vw, 1.2rem);
+    right: clamp(0.65rem, 1.5vw, 1.2rem);
+    z-index: 4;
+    display: grid;
+    place-items: center;
+    width: 2.15rem;
+    height: 2.15rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    background: rgba(5, 8, 9, 0.72);
+    font-size: 1.45rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  }
+  .resume-modal__close:hover,
+  .resume-modal__close:focus-visible {
+    color: var(--accent-strong);
+    border-color: var(--accent);
+    background: rgba(5, 8, 9, 0.94);
+    outline: none;
+  }
+  .resume-modal__panel .merge-slide { min-height: 100%; }
+  /* 弹窗已经由外层避开顶栏，内部不再重复占用一段顶栏高度。 */
+  .resume-modal__panel :global(.mg-inner) {
+    padding-top: clamp(.8rem, 2vh, 1.4rem);
+  }
+  .resume-modal__panel :global(.merge-slide) {
+    height: 100%;
+    min-height: 100%;
+  }
+  html.resume-modal-open { scroll-snap-type: none; overflow: hidden; }
+  html.resume-modal-open body { overflow: hidden; }
+
+  .platform-links {
+    pointer-events: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: clamp(1rem, 2.4vh, 1.6rem);
+  }
+  .platform-link {
+    display: inline-flex; align-items: center; gap: 0.55rem;
+    border: 1px solid var(--border); border-radius: var(--radius-pill);
+    padding: 0.45rem 0.85rem; color: var(--text-secondary); text-decoration: none;
+    transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .platform-link:hover,
+  .platform-link:focus-visible { border-color: var(--accent); color: var(--text-primary); outline: none; }
+  .platform-link svg { width: 16px; height: 16px; display: block; }
+  .platform-link__txt { font-size: var(--fs-small); letter-spacing: 0.02em; }
+
+  @media (max-width: 680px) {
+    .hero-bigtype {
+      right: clamp(0.4rem, 3vw, 1rem);
+      bottom: clamp(1rem, 4vh, 2rem);
+      font-size: clamp(4rem, min(27vw, 24vh), 9rem);
+      transform: rotate(-2deg);
+    }
+    .resume-modal { --resume-gap: 0px; padding: var(--topbar-h) 0 0; place-items: stretch; }
+    .resume-modal__panel {
+      width: 100%;
+      height: calc(100dvh - var(--topbar-h));
+      max-height: calc(100dvh - var(--topbar-h));
+      border-width: 0;
+    }
+  }
+
+  @media (max-height: 820px) and (min-width: 861px) {
+    .resume-modal { --resume-gap: .5rem; }
+    .resume-modal__panel :global(.mg-inner) {
+      padding-top: .55rem;
+      padding-bottom: .55rem;
+    }
+  }
+
+  /* 减少动效兜底 */
+  @media (prefers-reduced-motion: reduce) {
+    .bio-lanyard { transition: none !important; }
+    .resume-modal,
+    .resume-modal__backdrop,
+    .resume-modal__panel {
+      transition: none;
+    }
+    .resume-modal__panel,
+    .resume-modal.is-open .resume-modal__panel :global(.mg-head),
+    .resume-modal.is-open .resume-modal__panel :global(.mg-body),
+    .resume-modal.is-open .resume-modal__panel :global(.pec-cell) {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

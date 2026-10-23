@@ -1,0 +1,427 @@
+---
+/*
+ * ④ · 个人 AI 视频创作工作流（流线型 / streamlined）
+ * 以《雨巷》为旗舰案例，从「剧本创作」一路流到「剪辑成片」。
+ * 视觉：横向流动管线（连续渐变流光 + 阶梯错位卡片），刻意区别于垂直时间轴。
+ * 步骤卡片直接呈现《雨巷》现成资产静帧图，文案克制、不展开详细说明。
+ */
+import WebThreads from './react-bits/WebThreads.jsx';
+
+interface Stage {
+  n: string;
+  name: string;
+  en: string;
+  note: string;
+  img: string;        // 现成资产静帧图
+  imgAlt: string;
+}
+
+const example = '雨巷';
+const MEDIA = '/media/ai-video/rain-alley';
+
+const stages: Stage[] = [
+  {
+    n: '01',
+    name: '剧本',
+    en: 'SCRIPT',
+    note: '先定情绪与主题，再动笔写场景。脚本是整条线的总开关。',
+    img: `${MEDIA}/e1-insert1.webp`,
+    imgAlt: '雨巷 · 剧本插入镜头',
+  },
+  {
+    n: '02',
+    name: '分镜',
+    en: 'STORYBOARD',
+    note: '拆镜头时序与节奏，提前锁走位构图，后面生成不跑偏。',
+    img: `${MEDIA}/a6-scene-alley.webp`,
+    imgAlt: '雨巷 · 巷弄剧照',
+  },
+  {
+    n: '03',
+    name: '资产',
+    en: 'ASSETS',
+    note: '人物与场景先定型，统一资产语言，避免不同镜头串模。',
+    img: `${MEDIA}/a3-sister-damaged.webp`,
+    imgAlt: '雨巷 · 姐姐战损资产',
+  },
+  {
+    n: '04',
+    name: '生成',
+    en: 'GENERATE',
+    note: '用生成模型跑出首版素材，把关键质感与同框关系跑通，作为迭代基线。',
+    img: `${MEDIA}/g1-seg1.webp`,
+    imgAlt: '雨巷 · 生成片段',
+  },
+  {
+    n: '05',
+    name: '迭代',
+    en: 'ITERATE',
+    note: '逐版修畸变补穿帮，在反复微调里把成片质量收拢。',
+    img: `${MEDIA}/i1-seg5-v2.webp`,
+    imgAlt: '雨巷 · 迭代 v2',
+  },
+  {
+    n: '06',
+    name: '剪辑成片',
+    en: 'ASSEMBLE',
+    note: '多轨合成，留足声音与静默的呼吸位，把片段剪成一气呵成。',
+    img: `${MEDIA}/v1-final.webp`,
+    imgAlt: '雨巷 · 成片静帧',
+  },
+];
+---
+<script lang="ts">
+  // 类型仅在构建期用于 editor 提示；运行期由下方原生脚本驱动
+  export interface _Stage extends Record<string, unknown> {}
+</script>
+
+<section class="slide wf-slide" id="workflow">
+  <div class="wf-threads-bg" aria-hidden="true">
+    <WebThreads
+      client:load
+      colors={['#00B894', '#0B3D32', '#12231F']}
+      coreColor="#D7FFF3"
+      threadCount={6}
+      speed={0.16}
+      spread={0.22}
+      shimmer
+      glow={0.018}
+      brightness={0.5}
+      opacity={0.62}
+      fade={0.34}
+      mouseInteraction={false}
+      pulseOnClick={false}
+      dpr={1.5}
+    />
+  </div>
+  <div class="wf-inner reveal">
+    <!-- 屏头：统一系统（去序号） -->
+    <header class="slide-head">
+      <div class="slide-head__t">
+        <p class="slide-eyebrow">WORKFLOW · AI VIDEO DIRECTOR</p>
+        <h2 class="slide-title">个人 AI 视频创作工作流</h2>
+      </div>
+    </header>
+
+    <p class="wf-thesis">
+      从剧本到成片的一条龙，把创作拆成可复现的工程步骤。
+      <span class="wf-chip">以《{example}》为例</span>
+    </p>
+
+    <!-- 流线型管线：连续流光 + 阶梯错位卡片 -->
+    <div class="wf-flow">
+      <ol class="wf-nodes">
+        {
+          stages.map((s, index) => (
+            <li class="wf-node" data-wf-node style={`--wf-delay: ${index * 90}ms`}>
+              <span class="wf-node__no" aria-hidden="true">{s.n}</span>
+              <div class="wf-node__bd">
+                <p class="wf-node__name">
+                  {s.name} <span class="wf-node__en">{s.en}</span>
+                </p>
+                <p class="wf-node__note">{s.note}</p>
+                <figure class="wf-node__fig">
+                  <img src={s.img} alt={s.imgAlt} loading="lazy" draggable="false" />
+                </figure>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+
+    <p class="wf-foot">工具链 · Seedance 2.5 · Midjourney · Photoshop · DaVinci Resolve</p>
+  </div>
+</section>
+
+<style>
+  .wf-slide {
+    position: relative;
+    isolation: isolate;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden; /* 面板本身只一屏；内容超出在 .wf-inner 内部滚动 */
+    display: flex;
+    flex-direction: column;
+    background: transparent; /* 透出底层生成式氛围层 */
+  }
+  .wf-threads-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.78;
+  }
+  .wf-threads-bg :global(.web-threads-container),
+  .wf-threads-bg :global(.web-threads-canvas) {
+    width: 100%;
+    height: 100%;
+  }
+  .wf-inner {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-height: 0;
+    width: min(100%, var(--content-w));
+    max-width: var(--content-max);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    padding: calc(var(--topbar-h) + clamp(0.8rem, 2vh, 1.6rem)) clamp(1.5rem, 4vw, 4.5rem) clamp(1.4rem, 3vh, 2.4rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  .wf-inner::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  /* ── 信息主线 ── */
+  .wf-thesis {
+    position: relative;
+    flex: 0 0 auto;
+    font-size: clamp(1.02rem, 1.6vw, 1.35rem);
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-width: var(--measure-wide);
+    margin: 0 0 clamp(1.4rem, 3.4vh, 2.4rem);
+  }
+  .wf-chip {
+    display: inline-block;
+    margin-left: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.06em;
+    color: var(--accent-strong);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-pill);
+    padding: 0.15rem 0.6rem;
+    vertical-align: middle;
+  }
+
+  /* ── 流线型管线：连续流光 + 阶梯错位卡片 ── */
+  .wf-flow {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    margin: auto 0;
+  }
+  .wf-flow::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%) scaleX(0);
+    transform-origin: left center;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--accent-dim),
+      var(--accent),
+      var(--accent-dim),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: none;
+    opacity: 0;
+    transition: transform 900ms var(--ease-mech), opacity 360ms var(--ease);
+  }
+  .wf-slide.is-active .wf-flow::before {
+    transform: translateY(-50%) scaleX(1);
+    animation: wfRiver 4s linear 900ms infinite;
+    opacity: 0.5;
+  }
+  @keyframes wfRiver {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+
+  .wf-nodes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: clamp(0.7rem, 1.3vw, 1.2rem);
+  }
+  .wf-node {
+    --wf-offset: 0px;
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-media);
+    padding: clamp(1rem, 1.8vw, 1.4rem);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(calc(var(--wf-offset) + 18px)) scale(0.97);
+    transition:
+      border-color var(--dur-base) var(--ease),
+      opacity 520ms var(--ease),
+      transform 760ms var(--ease-mech);
+    transition-delay: var(--wf-delay, 0ms);
+  }
+  .wf-node:nth-child(even) { --wf-offset: 16px; }
+  .wf-slide.is-active .wf-node {
+    opacity: 1;
+    transform: translateY(var(--wf-offset)) scale(1);
+  }
+  .wf-node:hover {
+    border-color: var(--accent);
+    transform: translateY(calc(var(--wf-offset) - 4px)) scale(1.01);
+    transition-delay: 0ms;
+  }
+  .wf-node__fig {
+    margin: 0.6rem 0 0;
+    border-radius: calc(var(--radius-media) - 2px);
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    background: var(--ink);
+  }
+  .wf-node__fig img {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+  /* 阶梯错位 → 流动的路径感（桌面） */
+  .wf-node__no {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    line-height: 0.9;
+    color: transparent;
+    -webkit-text-stroke: 1.3px var(--accent);
+  }
+  .wf-node__name {
+    margin: 0;
+    font-family: var(--font-cn-head);
+    font-weight: 400;
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+  .wf-node__en {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-left: 0.4rem;
+  }
+  .wf-node__note {
+    margin: 0;
+    font-size: var(--fs-small);
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .wf-foot {
+    flex: 0 0 auto;
+    margin: clamp(1rem, 2.4vh, 1.8rem) 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* 窄屏：6 节点转 2×3 网格，整条流光隐藏（避免断裂） */
+  @media (max-width: 980px) {
+    .wf-nodes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      flex-wrap: wrap;
+    }
+    .wf-node { max-width: none; }
+    .wf-flow::before { display: none; }
+    .wf-node__detail-text { font-size: var(--fs-small); }
+  }
+  @media (max-width: 860px) {
+    .wf-node:nth-child(even),
+    .wf-node:nth-child(even):hover {
+      --wf-offset: 0px;
+    }
+  }
+  @media (max-width: 600px) {
+    .wf-threads-bg {
+      opacity: 0.52;
+    }
+    .wf-inner {
+      padding-inline: 1rem;
+    }
+    .wf-thesis {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .wf-flow {
+      flex: 0 0 auto;
+      margin: 0;
+    }
+    .wf-nodes {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.8rem;
+    }
+    .wf-node {
+      width: 100%;
+      max-width: none;
+      padding: 0.9rem;
+    }
+    .wf-node__note {
+      line-height: 1.5;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wf-flow::before {
+      animation: none;
+      transform: translateY(-50%) scaleX(1);
+      opacity: 0.5;
+      transition: none;
+    }
+    .wf-node,
+    .wf-node:hover,
+    .wf-node:nth-child(even),
+    .wf-node:nth-child(even):hover {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const workflow = document.querySelector('.wf-slide');
+  if (workflow instanceof HTMLElement) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      workflow.classList.add('is-active');
+    } else {
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry?.isIntersecting) {
+          workflow.classList.add('is-active');
+          observer.disconnect();
+        }
+      }, { threshold: 0.28 });
+      observer.observe(workflow);
+    }
+  }
+</script>

@@ -1,0 +1,114 @@
+[
+  {
+    "en": "domn-ip-visual",
+    "cn": "商业IP视觉创作",
+    "sub": "从0到1打造品牌角色与视觉资产",
+    "style": "business-magazine-front-page",
+    "zh_prompt": "商业IP视觉创作封面：用商业科技杂志头版语言，强商业隐喻（IP生态战略地图）重构主标题。",
+    "en_prompt": "Create a bold business-technology magazine front-page cover, aspect ratio 16:9. A single dominant commercial metaphor organizes the scene: a glowing three-dimensional strategic map of an intellectual-property ecosystem, where a central brand mascot figure stands atop a network of radiating nodes, market-path arrows, coordinate axes and a rising value curve that visually reconstructs the main title rather than sitting beside it. High-saturation color blocks, sharp graphics, minimal structural lines, arrows and data points. Editorial system with clean hierarchy: the main title rendered in large high-contrast sans-serif, the title itself formed by the flow lines and nodes. Keep information minimal but authentic: main title \"商业IP视觉创作\", a small subtitle line \"从0到1打造品牌角色与视觉资产\", and two or three small column tags. Premium media communication mood, sharp and shareable. No real publication names, logos, or trademarks. No stock finance-screen background, no generic business stock photos. Clean flat color fields, crisp edges. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-character-poster",
+    "cn": "原创角色海报设定图",
+    "sub": "角色立绘 · 三视图 · 设定规范",
+    "style": "retro-diffuse-gradient",
+    "zh_prompt": "原创角色海报设定图封面：复古弥散渐变编辑海报，柔色域与暗房颗粒中浮现原创角色概念。",
+    "en_prompt": "Create a retro diffuse-gradient editorial poster, aspect ratio 16:9. Soft dispersed color fields, fogged edges, old-press grain, darkroom-developing vignette, light scanlines and low-fi digital texture. A dreamy atmospheric portrait of an original character concept: a stylized figure emerging from a soft gradient haze, surrounded by faint design notes and a three-view study silhouette, treated as atmospheric art rather than literal illustration. Use a mid-saturation retro film palette (warm coral to cool teal) with one accidental experimental accent. The main title \"原创角色海报设定图\" sits in clear contrast against the diffuse color field, with a smaller subtitle \"角色立绘 · 三视图 · 设定规范\". Magazine-grid restraint, generous negative space. Like a Risograph or independent design magazine cover. No cheap rainbow gradients, no specific human face unless implied by the silhouette, no clutter. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-image-ipsticker-generator",
+    "cn": "IP贴纸素材库",
+    "sub": "一键生成可商用贴纸套组",
+    "style": "block-world",
+    "zh_prompt": "IP贴纸素材库封面：Minecraft 式高饱和方块世界，主标题被重构成贴纸岛与传送门结构。",
+    "en_prompt": "Create a Minecraft-style high-saturation voxel world poster, aspect ratio 16:9. Every element is built from blocks, pixels, voxels and blocky materials. The main title \"IP贴纸素材库\" is reconstructed as a real structure inside the voxel world: a floating sky-island made of sticker tiles, a blocky portal arch, and a path of energy blocks leading to a sticker library building. Add blocky characters, item frames, a signboard reading the subtitle \"一键生成可商用贴纸套组\", clouds, grass and clean water with clear layered lighting (midday clear light). Bright, sunny, spacious, game-promo spatial feel. The scene perspective and path guide the eye back to the title structure. Keep spatial hierarchy, do not fill every gap. No childish stickers, no low-quality cartoon, no plain pixel-icon collage. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-cover",
+    "cn": "真人出镜自媒体封面",
+    "sub": "真人博主的高转化封面模板",
+    "style": "minimal-public-space-photography",
+    "zh_prompt": "真人出镜自媒体封面：极简公共空间摄影感，真实人物在几何空间里作为尺度与隐喻符号。",
+    "en_prompt": "Create a minimal public-space photography editorial cover, aspect ratio 16:9. A calm, restrained, geometric public space: a sunlit colonnade or empty hall with clean tile grid, clear perspective and symmetrical order. A single real-person figure stands quietly at the threshold or along a corridor line, neutral expression, not performing, serving as a scale and metaphor sign within the space. Palette of mint green, ice blue, cream white, light wood, with one small tomato-red accent (the figure's garment) as the visual anchor. High-end editorial photography feel: real space, soft natural light, faint film grain, low noise, precise composition. The main title \"真人出镜自媒体封面\" appears as a structural wall sign or tile-grid element in tomato red or deep teal, integrated into the space, not a floating sticker; a smaller subtitle \"真人博主的高转化封面模板\" sits once near the edge in restrained editorial type. No info bars, barcodes, decorative English, no crowd, no posed fashion gesture. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-scifi-short-film",
+    "cn": "科幻短片剧本写作流程",
+    "sub": "从创意到分镜的科幻叙事法",
+    "style": "retro-japanese-sci-fi-anime-cover",
+    "zh_prompt": "科幻短片剧本写作流程封面：90年代日本科幻赛璐璐动画关键帧，无人物，用结构变化表达写作流程。",
+    "en_prompt": "Create a 1990s Japanese retro sci-fi cel-animation keyframe cover, aspect ratio 16:9. High-saturation flat color blocks, sharp hand-drawn linework, hard cel shadows, exaggerated perspective, strong light-dark contrast, slight film grain. No human characters — express the theme through a structure in motion: a screenplay page unfolding into a starfield tunnel, panels and timeline cards assembling, a trajectory line piercing through a planet arc, conveying the workflow of writing a sci-fi short. Use only these colors: deep purple #5F2A62, fluorescent green #8BD450, deep blue-black #1D1A2F, warning yellow #F5C024, bright purple #965FD4, classic orange #F47A16, plus minimal black and off-white. One dominant background color, one secondary, one small accent; no large gradients, no extra colors. The main title \"科幻短片剧本写作流程\" is the first visual, accurate and clearly readable in an elongated sharp Mincho or high-contrast serif style, not pasted at the edge; at most one subtitle line \"从创意到分镜的科幻叙事法\". No 3D, no photorealism, no modern cyberpunk, no copy of any existing anime. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-screenplay-save-the-cat",
+    "cn": "救猫咪剧本结构法",
+    "sub": "好莱坞经典故事节拍工程化",
+    "style": "semantic-minimal-translation",
+    "zh_prompt": "救猫咪剧本结构法封面：语义转译极简，把故事结构翻译成巨型文字骨架与人物关系的视觉句。",
+    "en_prompt": "Create a semantic-minimal-translation conceptual poster, aspect ratio 16:9. A single core concept translated into a precise visual sentence: the main title \"救猫咪剧本结构法\" becomes a giant structural wall or stage made of story-beat blocks, with a small figure standing on or embedded within the beats, conveying narrative architecture. Minimal main scene, clear supporting surface, one to three key elements. Palette restrained to two to four main color relations on a paper or print texture with slight grain. Large negative space that serves semantic tension. The core title is the first visual and clearly readable; a short subtitle \"好莱坞经典故事节拍工程化\" appears only once and deepens the concept. No piling elements, no complex background, no cheap gradient, no decorative clutter, do not treat the words as a plain label on an illustration. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-seedance-format",
+    "cn": "Seedance提示词格式",
+    "sub": "文生视频提示词结构化模板",
+    "style": "retro-ink-dot-matrix-metaphor",
+    "zh_prompt": "Seedance提示词格式封面：复古油墨点阵隐喻，浅暖灰米底、深黑铅字、极小点阵插图。",
+    "en_prompt": "Create a retro ink-printer plus minimal dot-matrix metaphor cover, aspect ratio 16:9. Background a flat warm gray-beige #DED9CF, perfectly even, no gradient, no paper grain, no stains. Main title and a tiny metaphor illustration in deep black #111111; the subtitle in dark gray #343434. Only these three colors. All text in one retro mechanical letterpress typeface, slightly narrow, squared, mechanical, with faint ink spread. Left-text right-image structure: left text zone about 52 percent width, main title \"Seedance提示词格式\" in the upper-left using the bold weight, at most two lines; right side a small black dot-matrix sketch (sparse dots and linear grid) representing a prompt-structure diagram, vertically centered, small and unobtrusive. One subtitle line \"文生视频提示词结构化模板\" in the left lower area in the thin weight. No high-saturation color, no glow, no 3D, no photorealism, no extra text, no auto-added explanations. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-character-showcase",
+    "cn": "人物展示动画导演",
+    "sub": "让角色动起来的镜头语言",
+    "style": "black-midcentury-modernist-cover",
+    "zh_prompt": "人物展示动画导演封面：黑色复古现代主义，黑主+米白+单一暖橙点缀，几何化人物剪影。",
+    "en_prompt": "Create a black mid-century modernist editorial illustration cover, aspect ratio 16:9, full-bleed to canvas edges. Black dominates: a large black field with retro film-noir and geometric flat-design language, rational and restrained, clean and iconic, strong cover presence. Strictly three colors: black as absolute main, off-white as auxiliary (title, skin tone, highlights, minimal type), and one vivid accent color — warm orange — used only on a local subject, a key title word, or a geometric shape. One core subject: a geometrically simplified character-showcase figure in a dynamic pose, rendered as a clean silhouette with flat color blocks, simplified features and slight retro proportion exaggeration, representing a character animation director. The figure and the main title \"人物展示动画导演\" together form the cover's main structure; title in a powerful book-cover or editorial serif or geometric type, clearly readable, not occluded. One subtitle \"让角色动起来的镜头语言\" weaker than the title. Restrained retro paper grain, screenprint, slight ink wear — very subtle, not dirty. Full-bleed, no white border, no card frame, no rounded white edge, no surrounding margin. No neon cyber, no modern tech blue-purple gradient, no multicolor, no complex glow, no glass or metal 3D, no anime, no photorealism, no dense labels or UI. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-action-director",
+    "cn": "武打动作导演",
+    "sub": "设计有重量的打击与节奏",
+    "style": "black-red-silhouette",
+    "zh_prompt": "武打动作导演封面：黑红剪影，纯红空间中的黑色武者剪影，白字标题。",
+    "en_prompt": "Create a black-red-silhouette cover, aspect ratio 16:9. Use only red, black, white. A large pure-red space as background, no gradient, no texture, no distress. A single black silhouette of a martial-arts fighter caught mid-strike — a clear, powerful action pose (a spinning kick or block) conveying weight and rhythm, outline clean, details restrained, no realistic face. The silhouette scene is the first visual; far view sees red space and black figure, near view reads the title. White main title \"武打动作导演\" in clean powerful sans-serif, smaller subtitle \"设计有重量的打击与节奏\" one step down. No other text, no info-graphics. No blue, purple, green, brown, gray-dirty, metallic or extra colors; no neon, no cyber glow, no photorealism, no complex background, no realistic face. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-henshin-director",
+    "cn": "变身动作指导",
+    "sub": "高燃变身镜头的分镜与运镜",
+    "style": "color-neo-constructivist-megastructure-poster",
+    "zh_prompt": "变身动作指导封面：彩色新构成主义巨构海报，巨型变身主体占据画面，强几何张力。",
+    "en_prompt": "Create a colorful neo-constructivist megastructure poster, aspect ratio 16:9. One core subject with monumental scale and extreme scale contrast: a giant transforming hero figure or a massive geometric henshin device bursting from the frame edge, occupying 40 to 80 percent of the image, with radical perspective and directional motion. Sharp geometric elements — huge arcs, wedges, radiating trajectory lines, repeated thin lines — carry space, rhythm and pressure, not decoration. Establish one bold limited palette of three to four colors (one dominant 50 to 70 percent, one explosive accent on the key subject or title, one dark structural, one light for text and negative). Restrained retro print texture: faint paper grain, screenprint halftone, slight misregistration. Main title \"变身动作指导\" in bold compressed geometric type, can be giant, partially cropped, aligned along a geometric edge, integrated as structure not sticker; one subtitle \"高燃变身镜头的分镜与运镜\" at most one line. One visual center, one metaphor, one motion direction. No normal-sized subject floating, no averaged color areas, no decorative geometry piles, no multiple centers. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-style-deconstruct",
+    "cn": "视觉风格逆向拆解流程",
+    "sub": "拆解任何画面背后的风格DNA",
+    "style": "black-white-gray-avant-geometry",
+    "zh_prompt": "视觉风格逆向拆解流程封面：黑白灰先锋几何，随机几何母题与巨型标题共同构成平衡。",
+    "en_prompt": "Create a black-white-gray avant-garde geometric poster, aspect ratio 16:9. Black, white, gray dominant with one tiny accent color node (optional orange). Background can be black, white, gray, or partitioned. Layout must vary: off-center, diagonal, wrapped, corner tension, extreme negative space, or vertical or horizontal axis — not fixed title-left graphic-right. Randomly combine two to four geometric motifs: semicircle, cut circle, concentric rings, funnel line array, perspective rectangle array, wireframe sphere, layered ellipses, dot matrix, fine-line grid, geometric slice, waveform array, or micro accent node. Subtle paper grain, emboss, grayscale gradient, fine grid, faint shadow, print error. The main title \"视觉风格逆向拆解流程\" complete, accurate, clear, may be giant horizontal, vertical, mixed size, scattered blocks, along edges, rotated, or embedded in geometric negative space. Geometry and title balance together. Modern grotesk or geometric sans for Chinese. No calligraphy, handwriting, cartoon, cute fonts, no distorting key strokes. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-kamen-raider",
+    "cn": "假面骑士风格高保真CG内容创作",
+    "sub": "特摄美学 · 高保真CG短片",
+    "style": "giant-perspective-chinese-title",
+    "zh_prompt": "假面骑士风格高保真CG内容创作封面：巨型透视中文标题，如纪念碑立面冲向观众。",
+    "en_prompt": "Create a giant-perspective Chinese title poster, aspect ratio 16:9. A super-large Chinese title \"假面骑士风格高保真CG内容创作\" occupies the dominant position with perspective distortion, spatial depth, speed lines, strong shadow and architectural mass — the title looks like a monumental facade, tunnel entrance or stage device rushing toward the viewer. Allow strong contrast color, coarse grain, motion blur, old-print traces, impact lines, diagonal cuts, dramatic light. Small figures, city edge, light beams or spatial references enhance scale. Bold, tense, like an event poster or large Chinese-type poster. The title is the first visual; subtitle \"特摄美学 · 高保真CG短片\" and auxiliary info build hierarchy around it. Perspective and occlusion enhance impact but never break glyph legibility. No weakening the Chinese title, no plain title-over-background structure, no unreadable decorative characters. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-film-ironic-upgrade",
+    "cn": "反讽升格短视频企划流程",
+    "sub": "用反差感做爆款短视频",
+    "style": "retro-torn-collage",
+    "zh_prompt": "反讽升格短视频企划流程封面：复古手撕拼贴，撕纸、胶带、半调网点与强标题叙事。",
+    "en_prompt": "Create a retro torn-collage editorial poster, aspect ratio 16:9. Torn paper, old newspaper, magazine clippings, photocopy noise, halftone dots, tape, stickers, ink misregistration, paper shadows. A deliberately casual but balanced collage: the main title \"反讽升格短视频企划流程\" printed on a torn paper, partially occluded by a paper scrap, with photocopy misalignment; small handwritten annotation and a sticker reading the subtitle \"用反差感做爆款短视频\"; clippings of ironic pop-culture fragments and an arrow. High-contrast or retro low-saturation, but must have old-print texture. Like an independent magazine, street poster wall, or art-exhibition poster. Image, title, paper and labels tell one story, not random piles. No disordered stacking, no every-element-steals-focus, no clean vector puzzle — keep paper, tear and print traces. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  },
+  {
+    "en": "domn-director-emotion-review",
+    "cn": "情感戏导演审核",
+    "sub": "把情绪演到位的关键审片",
+    "style": "french-minimal-ink-poster",
+    "zh_prompt": "情感戏导演审核封面：法式极简墨线海报，大留白中一个克制情感隐喻与墨线。",
+    "en_prompt": "Create a French minimal ink-line poster cover, aspect ratio 16:9. Warm ivory or off-white background, clean and quiet, 70 to 85 percent negative space. One core metaphor executed in black hand-drawn ink lines, ink blocks and minimal contours, with uneven line weight, natural pauses, breaks, rough edges, slight bleed and handmade trace. For an emotional-scene director review: a single restrained metaphor — two figures at a measured distance, or a hand and a paused gesture, conveying unspoken tension and timing — most of it dissolving into negative space. One accent color allowed (restrained blue) on a single tiny node. Main title \"情感戏导演审核\" clear, cover-like, first visual, in high-contrast serif or restrained Song-style type, auto-split into two to three lines if long, not too small, not filling the frame. Subtitle at most one line \"把情绪演到位的关键审片\", eight to eighteen characters, deepening the concept. No icons-as-nouns, no default side-profile or hands cliche forced, no circuit or robot tech decoration, no realistic photo, no 3D, no infographic, no watermark. 画面干净通透、避免过度锐化、噪点、伪细节。"
+  }
+]

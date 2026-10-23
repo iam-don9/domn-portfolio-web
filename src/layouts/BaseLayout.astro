@@ -1,0 +1,209 @@
+---
+import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import { SECTIONS, type SectionKey } from '../lib/sections';
+import SideNav from '../components/SideNav';
+import type { BranchedMenuItem } from '../components/BranchedMenu/BranchedMenu';
+import type { Project } from '../lib/projects';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** 当前激活的板块（子页用），首页为 'home' */
+  activeSection?: SectionKey | 'home';
+  /** 常驻侧栏数据：传入即渲染（板块页 / 详情页），首页与其它页不传 */
+  sideNav?: BranchedMenuItem[];
+  /** 侧栏默认激活值（通常为当前路由）；非叶子则回退首个 */
+  sideNavActive?: string;
+  /** 侧栏形态：板块页 = 项目种类 + 项目；详情页 = 页内锚点目录 */
+  sideNavKind?: 'section' | 'detail';
+  /** 板块页点击 skills 的 en 时判断是否已有详情页（仅 skills 页需要） */
+  sideNavProjects?: Project[];
+}
+const {
+  title,
+  description = 'DOMN-STUDIO · 生成式剧场',
+  activeSection = 'home',
+  sideNav,
+  sideNavActive,
+  sideNavKind,
+  sideNavProjects,
+} = Astro.props;
+
+const siteName = 'DOMN-STUDIO';
+const fullTitle = title ? `${title} · ${siteName}` : `${siteName} · 生成式剧场`;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = new URL('/og-default.jpg', Astro.site).href;
+
+// 常驻侧栏：由页面按需传入 sideNav；首页与无侧栏页不渲染。
+const hasSideNav = !!sideNav;
+---
+
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{siteName}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap"
+      rel="stylesheet"
+    />
+    <ClientRouter />
+
+    <style is:inline>
+      /* 首屏载入层：默认隐藏，仅首次进入由脚本短暂显示，掩盖 three.js + 视频缓冲的空白期 */
+      .domn-intro {
+        position: fixed; inset: 0; z-index: 9999;
+        display: none; flex-direction: column;
+        align-items: center; justify-content: center; gap: 1.1rem;
+        background: #000000; color: #e8e8e8;
+        transition: opacity .6s ease, visibility .6s ease;
+      }
+      .domn-intro.is-show { display: flex; }
+      .domn-intro.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+      .domn-intro .ii-mark {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-style: italic; font-weight: 600;
+        font-size: clamp(1.6rem, 5vw, 2.6rem); letter-spacing: .04em;
+      }
+      .domn-intro .ii-mark b { font-weight: 600; opacity: .55; margin: 0 .12em; }
+      .domn-intro .ii-line {
+        width: min(180px, 42vw); height: 1px;
+        background: rgba(232,232,232,.16); position: relative; overflow: hidden;
+      }
+      .domn-intro .ii-line::after {
+        content: ""; position: absolute; inset: 0; width: 38%;
+        background: linear-gradient(90deg, transparent, #e8e8e8, transparent);
+        animation: ii-sweep 1.1s ease-in-out infinite;
+      }
+      @keyframes ii-sweep { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+      @media (prefers-reduced-motion: reduce) {
+        .domn-intro .ii-line::after { animation: none; width: 100%; background: rgba(232,232,232,.4); }
+      }
+    </style>
+  </head>
+  <body
+    class:list={[activeSection === 'home' && 'is-home']}
+    data-stage-section={activeSection === 'home' ? '' : activeSection}
+  >
+    <!-- ══ 全站生成式氛围层（首页底层介质；子页由 global.css 隐藏） ══ -->
+    <div class="field" id="domn-field" aria-hidden="true">
+      <canvas id="field-canvas"></canvas>
+    </div>
+
+    <!-- ══ 全局顶部导航栏（跨页持久，仅高亮态由脚本更新） ══ -->
+    <header class="topbar" id="domn-topbar" transition:persist>
+      <a class="brand" href="/" aria-label="DOMN-STUDIO 首页">
+        <img class="symbols" src="/brand/geometric-symbols.svg" alt="" />
+        <span class="brand-mark">DOMN<b>·</b>STUDIO</span>
+      </a>
+
+      <nav class="topnav" aria-label="板块导航">
+        {
+          SECTIONS.filter((s) => !s.hidden).map((s, i) => (
+            <a
+              class:list={['nav-item', { 'is-active': activeSection === s.key }]}
+              href={s.route}
+              data-index={i + 1}
+              data-key={s.key}
+              aria-label={`${s.num} ${s.label} ${s.labelCn}`}
+              aria-current={activeSection === s.key ? 'page' : undefined}
+            >
+              <span class="nav-num">{s.num}</span>
+              <span class="nav-label">{s.label}</span>
+              <span class="nav-label-cn">{s.labelCn}</span>
+            </a>
+          ))
+        }
+      </nav>
+    </header>
+
+    <!-- ══ 内容区（浮于画幅之上） ══ -->
+    <main class:list={['page', hasSideNav && 'has-sidenav']}>
+      <slot />
+    </main>
+
+    <!-- ══ 常驻侧栏（板块页 / 详情页；首页 / 无侧栏页不渲染） ══ -->
+    {
+      hasSideNav && (
+        <SideNav
+          items={sideNav!}
+          activeValue={sideNavActive}
+          kind={sideNavKind}
+          projects={sideNavProjects}
+          client:load
+        />
+      )
+    }
+
+    <!-- 舞台初始化 + 全站生成式氛围层（#stage-canvas / #field-canvas） -->
+    <script>
+      import '../scripts/stage.mjs';
+      import '../scripts/field.mjs';
+    </script>
+
+    <!-- 全站 reveal 入场（首页 about/能力/作品等 + 详情页标题共用；astro:page-load 保证软导航也生效） -->
+    <script>
+      function initReveal() {
+        const els = document.querySelectorAll('.reveal');
+        if (!els.length) return;
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce) {
+          els.forEach((e) => e.classList.add('in'));
+          return;
+        }
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((en) => {
+            if (en.isIntersecting) {
+              en.target.classList.add('in');
+              io.unobserve(en.target);
+            }
+          });
+        }, { threshold: 0.16 });
+        els.forEach((e) => io.observe(e));
+      }
+      document.addEventListener('astro:page-load', initReveal);
+      initReveal(); // 初次硬加载兜底（脚本位于 body 末尾，DOM 已就绪）
+    </script>
+
+    <!-- 首屏载入层（仅首次进入显示；sessionStorage 防软导航重复显示，无闪） -->
+    <div class="domn-intro" id="domn-intro" aria-hidden="true">
+      <div class="ii-mark">DOMN<b>·</b>STUDIO</div>
+      <div class="ii-line"></div>
+    </div>
+    <script is:inline>
+      (function () {
+        var KEY = 'domn_intro_done';
+        var done = false;
+        try { done = sessionStorage.getItem(KEY) === '1'; } catch (e) {}
+        if (done) return;
+        var node = document.getElementById('domn-intro');
+        if (node) {
+          node.classList.add('is-show');
+          try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+        }
+        function hide() {
+          var n = document.getElementById('domn-intro');
+          if (!n || n.classList.contains('is-hidden')) return;
+          n.classList.remove('is-show');
+          n.classList.add('is-hidden');
+          setTimeout(function () { if (n && n.parentNode) n.parentNode.removeChild(n); }, 700);
+        }
+        window.addEventListener('astro:page-load', function () { setTimeout(hide, 400); });
+        window.addEventListener('load', function () { setTimeout(hide, 900); });
+        setTimeout(hide, 2600); // 兜底：无论资源多慢，最迟 2.6s 必隐藏
+      })();
+    </script>
+  </body>
+</html>

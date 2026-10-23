@@ -1,0 +1,311 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TitleCard from '../components/TitleCard.astro';
+import SkillShowcase from '../components/SkillShowcase.astro';
+import SkillSlides from '../components/SkillSlides.astro';
+import { SKILL_DECKS } from '../data/skillSlides';
+import { getSection } from '../lib/sections';
+import { getProjects } from '../lib/projects';
+import { buildSectionNav } from '../lib/sidenav';
+
+const sec = getSection('skills');
+
+interface Skill {
+  name: string;
+  en: string;
+  desc: string;
+  highlights?: string[];
+  pains?: string[];
+  cover?: string;
+  /** 有详情页时提供（自研工具卡）→ 整卡变链接 */
+  href?: string;
+  /** 卡片右下角的源码入口；en 即仓库名 */
+  github?: string;
+}
+interface Category {
+  label: string;
+  en: string;
+  intro: string;
+  skills: Skill[];
+}
+
+const methodologyCategories: Category[] = [
+  {
+    label: '视觉与角色系统',
+    en: 'VISUAL & CHARACTER SYSTEM',
+    intro: '从一张参考图把角色锁死，跨场景、跨物料、跨媒介地稳定产出，彻底杜绝「每一帧都是陌生人」。',
+    skills: [
+      {
+        name: '商业 IP 视觉创作',
+        en: 'domn-ip-visual',
+        cover: '/media/covers/domn-ip-visual.webp',
+        desc: '从模糊创意到可交付 IP 视觉资产的完整工作流：定方向、出主形象、建立审批与核心资产锁定，再系统延展三视图、表情、动作、换装、风格转译、海报与周边。重点在视觉创意、一致性与可持续生图。',
+        highlights: [
+          '「方向 → 主形象 → 锁定 → 延展」四段式，每段设审批闸门',
+          '造型与画风分离：确认身份后表现可换、身份不变',
+          '少而强的识别点，缩小后仍明显可辨',
+        ],
+        pains: [
+          '创意一上来就开画，风格四不像、返工无数',
+          'IP 形象跨场景复用时一致性崩坏，每次都像换人',
+        ],
+      },
+      {
+        name: '原创角色海报 / 设定图',
+        en: 'domn-character-poster',
+        cover: '/media/covers/domn-character-poster.webp',
+        desc: '输入角色参考图，按指定方向出 keyvisual 主视觉海报或人物设定图（sheet）。角色长相由参考图锚点卡锁死，演出与版式分别由演出库、画风库决定，三方互不越界。画面文字全英文。',
+        highlights: [
+          '角色锚点卡把长相锁死，演出 / 版式各自独立可控',
+          '先查库命中即套用，未命中按方法现生成，效率高',
+          '画面文字全英文，适配国际向宣发',
+        ],
+        pains: [
+          '同一角色不同海报「脸不一样」',
+          '海报版式与角色演出混在一起，改一处坏全局',
+        ],
+      },
+      {
+        name: '真人出镜自媒体封面',
+        en: 'domn-cover',
+        cover: '/media/covers/domn-cover.webp',
+        desc: '固定本人参考图，生成小红书 / 自媒体封面。本人长相由 i2i 锚点卡锁死，姿态 / 道具由演出库决定，版式 / 配色由封面风格原子决定。流程铁律是先给 3 个创意候选再定稿。',
+        highlights: [
+          '本人形象锚点卡只锁 1 维媒介 + 1 项标志物，克制不越界',
+          '强制「先 3 创意候选 → 用户定 → 再选高能演出」闸门',
+          '统一收口硬规则 / 张力七条 / 色彩底线 / 三道门',
+        ],
+        pains: [
+          '真人出镜每次脸都不一样、像换人',
+          '封面创意拍脑袋，缺乏可复用的风格系统',
+        ],
+      },
+      {
+        name: 'IP 贴纸素材库',
+        en: 'domn-image-ipsticker-generator',
+        cover: '/media/covers/domn-image-ipsticker-generator.webp',
+        desc: '把 IP 角色参考图转成一批可审阅的透明贴纸 PNG：一致性角色贴纸、3×3 贴纸表、语义化文件名与原生尺寸 alpha 边缘裁剪。批量生成前与裁剪前均设审批闸门。',
+        highlights: [
+          '双闸门审批（生成前定方案、批量后定稿），避免乱出',
+          'sticker_manifest.json 作文件名与替换唯一定源，杜绝乱命名',
+          '原生尺寸 alpha 边缘裁剪，透明底干净',
+        ],
+        pains: [
+          '贴纸批量生成前没对齐需求，出一大堆用不上的',
+          '命名混乱、透明边脏、3×3 对齐乱',
+        ],
+      },
+    ],
+  },
+  {
+    label: '电影导演语言',
+    en: 'CINEMATIC DIRECTION LANGUAGE',
+    intro: '把导演的视听意图翻译成 AI 视频模型能稳定执行的提示词与分镜，覆盖从剧本到表演的每个环节。',
+    skills: [
+      {
+        name: '人物展示动画导演',
+        en: 'domn-film-character-showcase',
+        cover: '/media/covers/domn-film-character-showcase.webp',
+        desc: '为 AI 视频生成「角色展示 / 亮相 / 英雄 PV」的提示词与分镜；从角色档案八项提取，套用展示原型与四拍结构，解决「看完记不住脸、不知道他会什么」。',
+        highlights: [
+          '角色档案八项 + 八类展示原型（王者荣耀型 / 鬼泣型 / 压迫登场型…）',
+          '四拍结构 S0 悬念 → S1 登场 → S2 展示 → S3 签名定格',
+          '全程无字幕、画风随角色而定、一致性三锚点',
+        ],
+        pains: [
+          '人物展示片看完记不住脸、感受不到性格',
+          '角色在不同镜头里「长相漂移」',
+        ],
+      },
+      {
+        name: '武打动作导演',
+        en: 'domn-film-action-director',
+        cover: '/media/covers/domn-film-action-director.webp',
+        desc: '为 AI 视频生成或补强打戏 / 武打 / 战斗分镜提示词，并诊断「发飘 / 不丝滑 / 没打击感 / 回原点 / 空放特效 / 缠斗糊成一团」等病症，给出改写稿。',
+        highlights: [
+          '三层架构（动作层 > 结构层 > 呈现层）：先让打斗成立再让它燃',
+          '接触链 + 回合节奏 + 重击三档，每帧有明确因果',
+          '针对发飘 / 空放特效 / 缠斗糊团等病症的改写库',
+        ],
+        pains: [
+          'AI 打戏发飘、没打击感、打完回原点',
+          '特效满天飞却看不清主体在干嘛',
+        ],
+      },
+      {
+        name: '变身动作指导',
+        en: 'domn-film-henshin-director',
+        cover: '/media/covers/domn-film-henshin-director.webp',
+        desc: '为 AI 视频生成或补强「变身 / 变形 / 合体 / 进化 / 换装 / 巨大化」的提示词与分镜，诊断「变到一半卡住 / 新旧形态叠影 / 主体漂移 / 特效淹没主体 / 亮相不帅」等病症。',
+        highlights: [
+          '变身类型学 19 亚类（装甲骑士型 / 兽化 / 物件化 / 恐怖异化…）',
+          '四拍时间结构 T0 触发 → T1 解构 → T2 重组 → T3 定格',
+          '形态构建镜头语法按亚类分流（生物重构 / 材质置换 / 粒子）',
+        ],
+        pains: [
+          '变身变到一半卡住、新旧形态叠影',
+          '特效淹没主体、最后亮相不帅',
+        ],
+      },
+      {
+        name: '科幻短片剧本流程',
+        en: 'domn-film-scifi-short-film',
+        cover: '/media/covers/domn-film-scifi-short-film.webp',
+        desc: '科幻短片剧本写作执行流程，按 8 步产出 logline、点子卡、逐拍结构表与可拍剧本；含点子发生器（10 原料库 × 12 算子）与三种时长模板。仅适用 ≤30 分钟。',
+        highlights: [
+          '点子发生器 10 原料 × 12 算子，告别灵感枯竭',
+          '双向筛选测试 + 三种时长拍子模板（≤30 分钟）',
+          '完整可拍剧本格式，直接进拍摄',
+        ],
+        pains: [
+          '科幻创意「脑洞很大、落不了地」',
+          '短片结构松散、节奏失控',
+        ],
+      },
+      {
+        name: '商业片剧本结构方法论',
+        en: 'domn-film-screenplay-save-the-cat',
+        cover: '/media/covers/domn-film-screenplay-save-the-cat.webp',
+        desc: '基于《救猫咪》的剧本结构方法论，把一句话提案匹配到 10 大故事题材，套用 15 拍结构表推演骨架，输出可写作的节拍表与大纲（含 50 部影片拆解语料）。仅适用 >30 分钟载体。',
+        highlights: [
+          '10 大故事题材匹配 + 15 拍结构表',
+          '50 部影片节拍拆解语料库',
+          '适用于电影 / 剧集 / 动画 / 分镜的故事层设计',
+        ],
+        pains: [
+          '故事有梗但结构散、撑不起长片',
+          '节拍表不会写、大纲推不动',
+        ],
+      },
+      {
+        name: '美学拆解短视频',
+        en: 'domn-film-style-deconstruct',
+        cover: '/media/covers/domn-film-style-deconstruct.webp',
+        desc: '把一种已有视觉风格 / 类型片 / 导演风格拆成可执行的技术清单，并拍成冷面吐槽式教程短片；笑点只落在套路上，不落人。',
+        highlights: [
+          '三份产出：拆解文档 + 冷面吐槽口播 + 生视频提示词',
+          '拆得越认真吐槽越好笑，但笑点不羞辱人',
+          '把「大家都在吐槽的点」归回技术层可照着做',
+        ],
+        pains: [
+          '想模仿一种风格，却说不清它到底好在哪',
+          '教程片容易变成人身攻击式吐槽',
+        ],
+      },
+      {
+        name: '假面骑士风 CG',
+        en: 'domn-film-kamen-raider',
+        cover: '/media/covers/domn-film-kamen-raider.webp',
+        desc: '假面骑士（Kamen Rider）风格的高保真 CG 内容创作（UE5 实时渲染 / Warframe 视觉）。生成骑士角色设计提示词，策划变身分镜与 30s「危机 → 变身 → 战斗」短片，并提供镜头调度方案。',
+        highlights: [
+          'UE5 实时渲染 / Warframe 视觉的高保真骑士设计',
+          '30s「危机 → 变身 → 战斗」完整短片策划',
+          '变身四拍 + 四机位（Cam1-4）调度方案',
+        ],
+        pains: [
+          '特摄变身 / 骑士踢想做但缺分镜与镜头调度',
+          '骑士设计提示词散、成品不像特摄',
+        ],
+      },
+      {
+        name: '反讽升格短视频',
+        en: 'domn-film-ironic-upgrade',
+        cover: '/media/covers/domn-film-ironic-upgrade.webp',
+        desc: '反讽升格短视频企划、口播文案与生视频提示词，做「把 XX 拍成买不起的样子」「把廉价物拍高级」这类解构式搞笑短片；核心方法是「复述」——把某套装 X 话术逐条还原。',
+        highlights: [
+          '核心方法「复述」：冷面说明书语气，笑点自己长出来',
+          '企划含选题配方 + 话语体系拆解 + 笑点零件排布',
+          '七段式生视频提示词（造型断层 / 同色升格 / 闪卡节奏）',
+        ],
+        pains: [
+          '解构式搞笑短片容易变成硬尬嘲讽，不好笑',
+          '升格运镜想做但提示词没章法',
+        ],
+      },
+      {
+        name: '生视频提示词格式规范',
+        en: 'domn-film-seedance-format',
+        cover: '/media/covers/domn-film-seedance-format.webp',
+        desc: 'Seedance / 即梦生视频提示词格式规范，写 / 改写 / 审核结构化提示词；七段式骨架（全局设定 / 素材绑定 / 画面契约 / 执行契约 / 场景 / 分段计划 / 负向约束）与对白语言规定。',
+        highlights: [
+          '七段式固定骨架，写完不像外行',
+          '每个位置写法经验，尤其对白 / 语言怎么规定',
+          '审核 = 按模板重排 + 保意，散乱提示词也能归位',
+        ],
+        pains: [
+          '生视频提示词写得像形容词堆砌，模型执行不了',
+          '对白 / 语言规定最容易写糊',
+        ],
+      },
+      {
+        name: '提示词情绪审查',
+        en: 'domn-director-emotion-review',
+        cover: '/media/covers/domn-director-emotion-review.webp',
+        desc: '审查情绪驱动的戏剧场景（微动作真实性、可玩目标、对白节奏、电影连续性）。接受剧本 / 场景 / 分镜 / 视频提示词文本，先判定源形式再返回对应分支修订。',
+        highlights: [
+          '先分类（剧本 vs 视频提示词 vs 混合），绝不混淆两类',
+          '情绪脊柱 + 六通道微动作审计（眼 / 睑 / 嘴 / 呼吸 / 声 / 身）',
+          '源形式保留，不擅自改写体裁',
+        ],
+        pains: [
+          '把剧本和生视频提示词混为一谈，改完体裁错乱',
+          '情绪戏假、微动作空洞、对白节奏平',
+        ],
+      },
+    ],
+  },
+];
+
+// 方法论 skill 每个都在 GitHub 有独立仓库，仓库名 = en；统一在这里补上卡片右下角的入口
+const methodology = methodologyCategories.map((c) => ({
+  ...c,
+  skills: c.skills.map((s) => ({ ...s, github: `https://github.com/iam-don9/${s.en}` })),
+}));
+
+const categories: Category[] = [...methodology];
+
+const skillList = categories.flatMap((c) =>
+  c.skills.map((s) => ({ en: s.en, name: s.name, category: c.label }))
+);
+
+// 常驻侧栏：板块页 → 项目种类（方法论类目）+ 项目（技能）
+const allSkills = await getProjects();
+const sectionNav = buildSectionNav(
+  categories.map((c, ci) => {
+    const letter = String.fromCharCode(65 + ci); // A / B … 与 SkillShowcase 的 sg-index 对齐
+    return {
+      label: `${letter} ${c.label} · ${c.en}`,
+      target: `skill-${letter}`,
+      items: c.skills.map((s) => ({ value: s.en, label: s.name })),
+    };
+  })
+);
+
+---
+
+<BaseLayout
+  title="研发与沉淀"
+  activeSection="skills"
+  sideNav={sectionNav}
+  sideNavActive={Astro.url.pathname}
+  sideNavKind="section"
+  sideNavProjects={allSkills}
+>
+  <div class="page-inner">
+
+    <TitleCard
+      num={sec.num}
+      label={sec.label}
+      labelCn={sec.labelCn}
+      title={sec.label}
+      lede={`把生成式流程亲手搭出来、跑通、再沉淀成可复用的武器——从视觉角色系统到电影导演语言，每个能力都对应一套自己打磨的 prompt / 分镜方法论。`}
+      video={sec.video}
+    />
+
+    <div class="page-body">
+      <SkillShowcase categories={categories} />
+
+      <SkillSlides deckMap={SKILL_DECKS} skills={skillList} />
+    </div>
+  </div>
+</BaseLayout>

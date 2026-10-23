@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="82 115 584 145" role="img" aria-labelledby="geometric-symbols-title geometric-symbols-desc">
+  <title id="geometric-symbols-title">四个几何符号</title>
+  <desc id="geometric-symbols-desc">米白色背景上排列着红色半圆、黄色圆形、蓝色折角形和黑色折角形。</desc>
+
+
+  <g id="red-semicircle" fill="#d92d20">
+    <path d="M82 115H111A69 69 0 0 1 111 260H82Z"/>
+  </g>
+
+  <g id="yellow-circle" fill="#fbbd16">
+    <circle cx="275" cy="187.5" r="72.5"/>
+  </g>
+
+  <g id="blue-chevron" fill="#145a93">
+    <path d="M372 115L440 182L507 115V260H372Z"/>
+  </g>
+
+  <g id="black-chevron" fill="#202020">
+    <path d="M535 115L600 182V115H666V260H535Z"/>
+  </g>
+</svg>

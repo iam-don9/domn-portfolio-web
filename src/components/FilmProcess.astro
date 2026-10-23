@@ -1,0 +1,502 @@
+---
+// 过程区：按生产顺序的时间轴
+//  - 阶段顺序固定（剧本 → 分镜 → 资产 → 生成 → 迭代 → 修正 → 剪辑），只渲染有素材的阶段
+//  - 每条素材 = 缩略图（可选）+ 名称 + 一句「证明了什么」+ B 站外链（可选）
+//  - 「资产」阶段的素材以 pp-card 呈现（与进化论世界观页同源），其余阶段为紧凑缩略图
+//  - 滚动浮现，尊重 reduced-motion
+import { getAspectRatio } from '../lib/imageRatio';
+interface Clip {
+  label: string;
+  stage: string;
+  proves?: string;
+  thumb?: string;
+  bilibiliUrl?: string;
+  /** 分镜提示词（details 折叠展开） */
+  prompt?: string;
+  /** 「资产 / 其他」阶段的附图，除 thumb 外的轮播图 */
+  assets?: string[];
+  /** 资产卡名称，缺省回落到 label */
+  name?: string;
+  /** 资产卡角色说明 */
+  role?: string;
+  /** 资产卡备注，缺省回落到 proves */
+  note?: string;
+}
+interface Props {
+  clips: Clip[];
+  /** 缩略图基址，如 /media/ai-video/rain-alley/ */
+  mediaBase: string;
+  kicker?: string;
+}
+const { clips, mediaBase, kicker = 'PRODUCTION PROCESS · 制作过程' } = Astro.props;
+
+const STAGE_ORDER = ['剧本', '分镜', '资产', '其他', '生成', '迭代', '修正', '剪辑'];
+
+// 「资产 / 其他」阶段以 pp-card 呈现，且仅在有缩略图的素材上渲染；无 thumb 的卡片素材
+// 不应留下空标题，故从分组中剔除，使整段「制作过程」在无任何可渲染内容时干净折叠
+// （片段影片只传 资产 阶段，无图即整段消失，只剩成片）。
+const CARD_STAGES = ['资产', '其他'];
+const hasCards = clips.some((c) => CARD_STAGES.includes(c.stage) && c.thumb);
+
+const groups = STAGE_ORDER.map((stage) => ({
+  stage,
+  items: clips.filter((c) => c.stage === stage),
+})).filter((g) => g.items.length > 0 && (!CARD_STAGES.includes(g.stage) || hasCards));
+
+// 「资产 / 其他」阶段的素材以 pp-card 呈现：预计算封面与轮播附图的朝向与比例
+//（竖构图盖左区、横构图盖整卡）。图区宽度按卡内最宽竖图统一约束：宽度占比 = 9/16 × 宽高比，
+// 上限取 3:4（27/64 ≈ 42.19%），保证 9:16 / 3:4 等竖图都不会压过右侧文字区。
+const PORTRAIT_MAX = 27 / 64;
+const toMediaPct = (ratios: number[]) => {
+  const portraitWidths = ratios.filter((r) => r < 1).map((r) => (r * 9) / 16);
+  return portraitWidths.length ? Math.min(Math.max(...portraitWidths), PORTRAIT_MAX) * 100 : 0;
+};
+const assetClips = clips.filter((c) => CARD_STAGES.includes(c.stage) && c.thumb);
+const assetCards = await Promise.all(
+  assetClips.map(async (c, i) => {
+    const coverRatio = await getAspectRatio(`public${mediaBase}${c.thumb as string}`);
+    const rest = await Promise.all(
+      (c.assets ?? []).map(async (f) => ({
+        file: f,
+        ratio: await getAspectRatio(`public${mediaBase}${f}`),
+      }))
+    );
+    rest.sort((a, b) => Number(b.ratio < 1) - Number(a.ratio < 1));
+    const mediaPct = toMediaPct([coverRatio, ...rest.map((s) => s.ratio)]);
+    return {
+      name: c.name ?? c.label,
+      role: c.role,
+      note: c.note ?? c.proves,
+      cover: { file: c.thumb as string, portrait: coverRatio < 1 },
+      shots: rest.map((s) => ({ ...s, portrait: s.ratio < 1 })),
+      stage: c.stage,
+      key: `fp-${i}`,
+      mediaPct,
+    };
+  })
+);
+---
+
+{
+  groups.length > 0 && (
+    <section class="block">
+      <p class="label en-title reveal">{kicker}</p>
+      <h2 class="title-type reveal">制作过程</h2>
+
+      <ol class="fp-timeline">
+        {groups.map((g) => (
+          <li class="fp-stage">
+            <div class="fp-stage__head reveal">
+              <span class="fp-dot" aria-hidden="true" />
+              <span class="fp-stage__name">{g.stage}</span>
+              <span class="fp-stage__count">{String(g.items.length).padStart(2, '0')}</span>
+            </div>
+            {CARD_STAGES.includes(g.stage) ? (
+              assetCards.filter((card) => card.stage === g.stage).length > 0 && (
+                <div class="pp-rows">
+                  <div class="pp-row">
+                    <p class="pp-row__label reveal">
+                      {g.stage === '其他' ? '其他 / OTHERS' : '资产 / ASSETS'}
+                    </p>
+                    <div class="pp-cards">
+                      {assetCards
+                        .filter((card) => card.stage === g.stage)
+                        .map((card) => (
+                        <article
+                          class="pp-card reveal"
+                          style={card.mediaPct > 0 ? `--pp-media: ${card.mediaPct.toFixed(2)}%` : undefined}
+                        >
+                          <div class="pp-card__shots" aria-hidden="true">
+                            <img
+                              class:list={[
+                                'pp-card__shot',
+                                card.cover.portrait ? 'is-portrait' : 'is-landscape',
+                                'is-active',
+                              ]}
+                              src={`${mediaBase}${card.cover.file}`}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            {card.shots.map((shot) => (
+                              <img
+                                class:list={[
+                                  'pp-card__shot',
+                                  shot.portrait ? 'is-portrait' : 'is-landscape',
+                                ]}
+                                src={`${mediaBase}${shot.file}`}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ))}
+                          </div>
+                          <div class="pp-card__text">
+                            <p class="pp-card__name">{card.name}</p>
+                            {card.role && <p class="pp-card__role">{card.role}</p>}
+                            {card.note && <p class="pp-card__note">{card.note}</p>}
+                            {card.shots.length > 1 && (
+                              <p class="pp-card__hint">
+                                {String(card.shots.length + 1).padStart(2, '0')} 张资产 · 悬停浏览
+                              </p>
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div class="fp-items">
+                {g.items.map((c) => (
+                  <div class="fp-item reveal">
+                    <div class="fp-thumb">
+                      {c.thumb ? (
+                        <img src={`${mediaBase}${c.thumb}`} alt={c.label} loading="lazy" />
+                      ) : (
+                        <span class="fp-thumb__ph" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div class="fp-body">
+                      <p class="fp-label">{c.label}</p>
+                      {c.proves && <p class="fp-proves">{c.proves}</p>}
+                      {c.prompt && (
+                        <details class="fp-prompt">
+                          <summary>分镜提示词</summary>
+                          <pre>{c.prompt}</pre>
+                        </details>
+                      )}
+                      {c.bilibiliUrl && (
+                        <a class="fp-link" href={c.bilibiliUrl} target="_blank" rel="noopener noreferrer">
+                          在 B 站观看 <span class="ar">↗</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  .fp-timeline {
+    list-style: none;
+    margin: clamp(1.8rem, 4vh, 2.8rem) 0 0;
+    padding: 0;
+    position: relative;
+  }
+  /* 主轴线 */
+  .fp-timeline::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 0.6rem;
+    bottom: 0.6rem;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .fp-stage {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: clamp(2rem, 5vh, 3.2rem);
+  }
+  .fp-stage:last-child { margin-bottom: 0; }
+
+  .fp-stage__head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1rem;
+  }
+  .fp-dot {
+    position: absolute;
+    left: 0;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 0 4px var(--bg);
+  }
+  .fp-stage__name {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .fp-stage__count {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 1px 8px;
+  }
+
+  .fp-items {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .fp-item {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 1rem;
+    align-items: start;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-media);
+    background: var(--surface);
+    padding: 0.75rem;
+    transition: border-color var(--dur-base) var(--ease);
+  }
+  .fp-item:hover { border-color: var(--border); }
+
+  .fp-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--surface-raised);
+  }
+  .fp-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--dur-slow) var(--ease);
+  }
+  .fp-item:hover .fp-thumb img { transform: scale(1.05); }
+  .fp-thumb__ph {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--surface-raised), var(--surface));
+  }
+
+  .fp-body { min-width: 0; }
+  .fp-label {
+    margin: 0;
+    font-size: var(--fs-body);
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+  .fp-proves {
+    margin: 0.4rem 0 0;
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .fp-link {
+    display: inline-block;
+    margin-top: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .fp-link:hover { color: var(--accent-strong); }
+  .fp-link .ar { display: inline-block; transition: transform var(--dur-base) var(--ease); }
+  .fp-link:hover .ar { transform: translate(3px, -3px); }
+
+  /* 分镜提示词：时间线内折叠，展开为等宽原文 */
+  .fp-prompt {
+    margin-top: 0.6rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    background: var(--surface-raised);
+  }
+  .fp-prompt summary {
+    cursor: pointer;
+    padding: 0.45rem 0.7rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    user-select: none;
+  }
+  .fp-prompt summary:hover { color: var(--accent-strong); }
+  .fp-prompt pre {
+    margin: 0;
+    padding: 0.7rem 0.8rem;
+    border-top: 1px solid var(--border-soft);
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    line-height: 1.7;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* 资产阶段：pp-card（与进化论世界观页同源）—— 16:9，左图右文，悬停轮播附图 */
+  .pp-rows { display: grid; gap: 1.6rem; margin-top: 1.2rem; }
+  .pp-row__label {
+    margin: 0 0 0.7rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+  }
+  .pp-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .pp-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-media);
+    background: var(--surface);
+    transition: border-color var(--dur-base) var(--ease);
+  }
+  .pp-card:hover { border-color: var(--border); }
+
+  .pp-card__shots {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+  .pp-card__shot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity var(--dur-slow) var(--ease);
+  }
+  /* 竖图（9:16 / 3:4 …）→ 统一约束在左侧图区内：
+     高度撑满，宽度 = 卡内最宽竖图比例（--pp-media，上限 3:4），左对齐，等比缩放不外溢 */
+  .pp-card__shot.is-portrait {
+    height: 100%;
+    width: auto;
+    max-width: var(--pp-media, 42.19%);
+    object-fit: contain;
+    object-position: left center;
+  }
+  .pp-card__shot.is-landscape { width: 100%; height: 100%; object-fit: cover; }
+  .pp-card__shot.is-active { opacity: 1; }
+
+  .pp-card__text {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    /* 文字区起点跟随图区宽度，避免被竖图遮盖 */
+    left: calc(var(--pp-media, 42.19%) + 3%);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+  }
+  .pp-card__name {
+    margin: 0;
+    font-size: var(--fs-body);
+    color: var(--text-primary);
+    line-height: 1.35;
+  }
+  .pp-card__role {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    line-height: 1.4;
+  }
+  .pp-card__note {
+    margin: 0.2rem 0 0;
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .pp-card__hint {
+    margin: 0.4rem 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: none;
+    will-change: auto;
+    transition: opacity var(--dur-base) var(--ease), transform var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease);
+  }
+  .reveal.in { opacity: 1; transform: none; filter: none; }
+  .fp-stage__head.reveal { transform: none; transition-duration: var(--dur-med); }
+
+  @media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+    .pp-card.reveal:nth-child(even) { transition-delay: 80ms, 80ms, 0ms; }
+  }
+
+  @media (max-width: 760px) {
+    .fp-item { grid-template-columns: 1fr; }
+    .fp-stage { padding-left: 1.5rem; }
+  }
+  @media (max-width: 900px) {
+    .pp-cards { grid-template-columns: 1fr; }
+    .pp-card__text { left: calc(var(--pp-media, 42.19%) + 2.5%); padding: 0.7rem 0.85rem; }
+    .pp-card__note { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .fp-item:hover .fp-thumb img { transform: none; }
+    .pp-card__shot { transition: none; }
+  }
+</style>
+
+<script>
+  // 角色卡片悬停 → 立即切到第一张非首图，并在非首图之间轮播（与进化论同源）。
+  function initCardCarousel() {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll<HTMLElement>('.pp-card').forEach((card) => {
+      if (card.dataset.carouselBound === '1') return;
+      card.dataset.carouselBound = '1';
+
+      const shots = card.querySelectorAll<HTMLElement>('.pp-card__shot');
+      if (shots.length < 2 || reduce) return;
+
+      let idx = 0;
+      let timer = 0;
+      const show = (next: number) => {
+        shots[idx].classList.remove('is-active');
+        idx = next;
+        shots[idx].classList.add('is-active');
+      };
+      const nextIndex = () => (idx + 1 >= shots.length ? 1 : idx + 1);
+      const start = () => {
+        if (timer) return;
+        show(nextIndex());
+        timer = window.setInterval(() => show(nextIndex()), 1100);
+      };
+      const stop = () => {
+        window.clearInterval(timer);
+        timer = 0;
+        if (idx !== 0) show(0);
+      };
+      card.addEventListener('pointerenter', start);
+      card.addEventListener('pointerleave', stop);
+      card.addEventListener('focusin', start);
+      card.addEventListener('focusout', stop);
+    });
+  }
+
+  initCardCarousel();
+  document.addEventListener('astro:page-load', initCardCarousel);
+</script>

@@ -1,0 +1,30 @@
+[
+  {
+    "slug": "liminal-light",
+    "filename": "01-poster",
+    "aspect": "16:9",
+    "promptZh": "阈限之光 主视觉海报",
+    "prompt": "Gregory Crewdson 风格的暗调超现实摄影海报：深夜无人的城市走廊，戏剧性顶光打在空荡地面上，远处一个模糊人影，整体冷蓝调，巨大留白处电影感标题「阈限之光 Liminal Light」。A24 海报质感，无杂乱元素，严禁外文品牌名水印。"
+  },
+  {
+    "slug": "liminal-light",
+    "filename": "02-installation",
+    "aspect": "3:2",
+    "promptZh": "阈限之光 展览空间",
+    "prompt": "暗调超现实美术馆空间：一个发光的半透明立方体悬浮在黑暗展厅中央，地面拉出细长投影，雾气弥漫，电影级布光，寂静神秘，无文字，画面呼吸感强。"
+  },
+  {
+    "slug": "liminal-light",
+    "filename": "03-variant",
+    "aspect": "1:1",
+    "promptZh": "阈限之光 主视觉变体",
+    "prompt": "暗调当代艺术展主视觉变体：一只人手举着一盏微弱灯笼，背景是吞噬一切的黑暗，戏剧性侧光勾出手部轮廓，超现实静物，A24 质感，画面边缘留黑，无文字。"
+  },
+  {
+    "slug": "liminal-light",
+    "filename": "04-spread",
+    "aspect": "3:4",
+    "promptZh": "阈限之光 画册跨页",
+    "prompt": "暗调影像艺术展画册跨页：左页一张幽暗旷野的长曝光照片，右页大片黑底印银白中文字「阈限之光」与极简英文展讯，编辑设计克制，电影感，无杂乱元素。"
+  }
+]

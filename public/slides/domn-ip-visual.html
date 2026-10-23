@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>domn-ip-visual · 商业 IP 视觉创作</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+<style>
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES (zara-frontend-slides)
+   =========================================== */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #0a0c0e; }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: #0a0c0e; }
+.deck-stage {
+  position: absolute; left: 0; top: 0;
+  width: 1920px; height: 1080px;
+  overflow: hidden; transform-origin: 0 0;
+  /* 缩放由父层(iframe 模式)或下面的 JS(独立打开)写入 inline transform */
+  background: #0a0c0e;
+}
+.slide {
+  position: absolute; inset: 0;
+  width: 1920px; height: 1080px;
+  overflow: hidden; display: block;
+  visibility: hidden; opacity: 0; pointer-events: none;
+  background: #0a0c0e;
+}
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* ===========================================
+   THEME — DOMN dark · 雾蓝灰 #88a9bd on near-black
+   设计系统纪律参照 broadside design.md：
+   单一 accent / flat 无圆角 / 1px hairline / mono chrome / / 形 bullet / 36×2 stub rule
+   =========================================== */
+:root {
+  --bg: #0a0c0e;
+  --line: #232a31;
+  --text: #f4f5f7;
+  --muted: #8b929b;
+  --hint: #57616c;
+  --accent: #88a9bd;   /* 唯一强调色，无第二 accent */
+  --display: 'Space Grotesk', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --mono: 'Space Mono', 'PingFang SC', 'Microsoft YaHei', ui-monospace, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-content {
+  position: absolute; inset: 0;
+  padding: 60px 96px 48px;
+  display: flex; flex-direction: column;
+  background: #0a0c0e;
+}
+
+/* chrome bar —— mono 通道：左标签右页码，1px hairline */
+.chrome {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--mono); font-size: 17px; color: var(--hint);
+  border-bottom: 1px solid var(--line); padding-bottom: 14px;
+}
+.chrome .cn { color: var(--accent); }
+.chrome .en { letter-spacing: 0.14em; text-transform: uppercase; }
+.foot {
+  margin-top: auto; border-top: 1px solid var(--line); padding-top: 14px;
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 17px; color: var(--hint);
+}
+
+/* kicker —— 中文 chrome 标签：mono 族 + accent 色，无 uppercase 无 tracking（CJK 规则） */
+.kicker { font-family: var(--mono); font-size: 20px; color: var(--accent); margin: 30px 0 16px; }
+.s-h {
+  font-family: var(--display); font-weight: 700; font-size: 72px;
+  line-height: 1.12; letter-spacing: -0.015em; margin: 0; color: var(--text);
+}
+/* CJK 标题不带句号；负字距只影响拉丁字形 */
+.stub { width: 36px; height: 2px; background: var(--accent); margin-top: 26px; }
+.lead { font-family: var(--display); font-size: 27px; line-height: 1.75; color: var(--muted); max-width: 1440px; margin: 24px 0 0; }
+.vmeta { font-family: var(--mono); font-size: 18px; color: var(--hint); margin: 14px 0 0; letter-spacing: 0.06em; }
+
+/* reveal */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.5s var(--ease), transform 0.5s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.slide.visible .reveal:nth-child(1) { transition-delay: 0.06s; }
+.slide.visible .reveal:nth-child(2) { transition-delay: 0.14s; }
+.slide.visible .reveal:nth-child(3) { transition-delay: 0.22s; }
+.slide.visible .reveal:nth-child(4) { transition-delay: 0.30s; }
+.slide.visible .reveal:nth-child(5) { transition-delay: 0.38s; }
+.slide.visible .reveal:nth-child(6) { transition-delay: 0.46s; }
+
+/* ── bullet：/ 形 mono marker（broadside 签名件），列表收敛 3 条 ── */
+.plist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 24px; }
+.plist li { font-family: var(--display); font-size: 28px; line-height: 1.6; color: var(--text); padding-left: 36px; position: relative; }
+.plist li::before { content: "/"; position: absolute; left: 0; top: 0; font-family: var(--mono); font-weight: 700; color: var(--accent); }
+
+/* stat-card 模式：仅顶部 2px accent 规则，无底色无圆角 */
+.pcard { border-top: 2px solid var(--accent); padding-top: 26px; }
+.pcard .lab { font-family: var(--mono); font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 0 0 18px; }
+.pcard p { font-family: var(--display); font-size: 27px; line-height: 1.75; color: var(--text); margin: 0; }
+
+/* ── 成果页：海报主图 + 2×2 产出矩阵 ── */
+.show-body { display: grid; grid-template-columns: 440px 1fr; gap: 24px; flex: 1; min-height: 0; margin-top: 26px; }
+.mgrid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; min-height: 0; }
+.fig { border: 1px solid var(--line); margin: 0; overflow: hidden; display: flex; flex-direction: column; min-height: 0; background: #10141a; }
+.fig img { width: 100%; flex: 1; min-height: 0; object-fit: cover; display: block; }
+.fig figcaption {
+  font-family: var(--mono); font-size: 16px; color: var(--muted);
+  padding: 10px 14px; border-top: 1px solid var(--line); letter-spacing: 0.04em; flex: none;
+}
+
+/* ── split：痛点 / 解法 ── */
+.split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 72px; margin: auto 0; padding: 20px 0; }
+
+/* ── 文件结构 ── */
+.struct { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 64px; flex: 1; align-items: start; margin-top: 30px; }
+.tree {
+  font-family: var(--mono); font-size: 25px; line-height: 2.0; color: var(--text);
+  border: 1px solid var(--line); padding: 30px 34px; margin: 0; background: transparent;
+}
+.tree .dir { color: var(--accent); }
+.tree .fname { color: var(--text); }
+.tree .cmt { color: var(--hint); }
+.filerow { display: flex; flex-direction: column; gap: 34px; }
+.fcard { border-top: 2px solid var(--accent); padding: 26px 0 0; }
+.fcard .fl { font-family: var(--mono); font-size: 23px; letter-spacing: 0.06em; color: var(--accent); margin: 0 0 14px; }
+.fcard p { font-family: var(--display); font-size: 25px; line-height: 1.65; color: var(--text); margin: 0; }
+.fcard .meta-tags { font-family: var(--mono); font-size: 18px; color: var(--hint); margin: 14px 0 0; line-height: 1.7; }
+
+/* ── 十阶段：hairline 网格（无卡片底色无圆角）── */
+.fgrid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--line); border-left: 1px solid var(--line);
+  margin-top: 30px;
+}
+.fcell { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 26px 24px 30px; display: flex; flex-direction: column; gap: 14px; min-height: 170px; }
+.fcell .fn { font-family: var(--mono); font-size: 24px; color: var(--accent); }
+.fcell p { font-family: var(--display); font-size: 23px; line-height: 1.55; color: var(--text); margin: 0; }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+  <main class="deck-stage" id="deckStage">
+
+    <!-- 01 · 成果先行：跳鼠完整案例 -->
+    <section class="slide active">
+      <div class="slide-content">
+        <div class="chrome reveal"><span class="cn">domn-ip-visual · 商业 IP 视觉创作</span><span class="en">Output / 01 / 04</span></div>
+        <p class="kicker reveal">先看成果</p>
+        <h2 class="s-h reveal">从一句话，到一整个 IP</h2>
+        <div class="show-body reveal">
+          <figure class="fig"><img src="/media/ip-design/jerboa/04-poster.webp" alt="跳鼠主视觉海报" /><figcaption>主视觉海报 · hero 母资产衍生</figcaption></figure>
+          <div class="mgrid">
+            <figure class="fig"><img src="/media/ip-design/jerboa/01-turnaround.webp" alt="跳鼠三视图" /><figcaption>三视图 · 正 / 侧 / 背</figcaption></figure>
+            <figure class="fig"><img src="/media/ip-design/jerboa/02-expressions.webp" alt="跳鼠表情系统" /><figcaption>表情系统 · 九宫格</figcaption></figure>
+            <figure class="fig"><img src="/media/ip-design/jerboa/03-actions.webp" alt="跳鼠动作系统" /><figcaption>动作系统 · 行为视觉化</figcaption></figure>
+            <figure class="fig"><img src="/media/ip-design/jerboa/05-merch.webp" alt="跳鼠周边应用" /><figcaption>周边应用 · 毛绒 / 手办 / 帆布袋 / 徽章</figcaption></figure>
+          </div>
+        </div>
+        <div class="foot"><span>跳鼠 · 完整案例</span><span>原始输入 → 主形象 → 母资产 → 变体 → 周边</span></div>
+      </div>
+    </section>
+
+    <!-- 02 · 是什么 + 解决什么 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="chrome reveal"><span class="cn">domn-ip-visual · 商业 IP 视觉创作</span><span class="en">About / 02 / 04</span></div>
+        <p class="kicker reveal">它是什么 · 它解决什么</p>
+        <h2 class="s-h reveal">商业 IP 视觉创作</h2>
+        <p class="vmeta reveal">domn-ip-visual · IP视觉共创 v1.0.0</p>
+        <p class="lead reveal">一个 IP 从一句模糊的想法，到能直接交付的整套视觉资产：先定方向，出主形象，锁住核心资产，然后铺三视图、表情、动作、换装、海报和周边。要的是可复用的流程，不是一次性出一张图。</p>
+        <div class="split reveal">
+          <ul class="plist">
+            <li>创意一上来就开画，风格四不像、返工不断</li>
+            <li>换场景复用时一致性崩坏，每次都像换了个 IP</li>
+            <li>只出单张图，攒不成可复用的视觉资产</li>
+          </ul>
+          <div class="pcard">
+            <p class="lab">解法</p>
+            <p>方向先定，图后生 → 造型和画风拆开 → 身份锁死、表现可变 → 识别点少而狠，缩到很小也认得出。</p>
+          </div>
+        </div>
+        <div class="foot"><span>不接：纯商业策略、授权、生产咨询</span><span>超出范围</span></div>
+      </div>
+    </section>
+
+    <!-- 03 · 文件结构 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="chrome reveal"><span class="cn">domn-ip-visual · 商业 IP 视觉创作</span><span class="en">Structure / 03 / 04</span></div>
+        <p class="kicker reveal">核心结构</p>
+        <h2 class="s-h reveal">两个文件，跑完整个流程</h2>
+        <div class="struct reveal">
+          <pre class="tree"><span class="dir">domn-ip-visual/</span>
+├── <span class="fname">meta.yaml</span>   <span class="cmt">· 身份卡</span>
+└── <span class="fname">SKILL.md</span>    <span class="cmt">· 执行说明书</span></pre>
+          <div class="filerow">
+            <div class="fcard">
+              <p class="fl">meta.yaml</p>
+              <p>技能的身份与元数据：中文名「IP视觉共创」、版本号、分类标签、中英文摘要与描述、作者与来源。</p>
+              <p class="meta-tags">给技能市场 / 索引读取，不参与执行。改这里只影响「它叫什么、归哪类」。</p>
+            </div>
+            <div class="fcard">
+              <p class="fl">SKILL.md</p>
+              <p>真正的执行说明书：五条核心原则、八态状态机、视觉创作十阶段、17 页提案模板、最高优先级约束。Agent 干活时读的就是它。</p>
+              <p class="meta-tags">内部按 read_when / 原则 / 状态机 / 十阶段 / 模板 / 优先级规则 分节，越改越像一份会逐渐长大的设计文档。</p>
+            </div>
+          </div>
+        </div>
+        <div class="foot"><span>没有脚本、没有额外资源</span><span>逻辑全在 SKILL.md</span></div>
+      </div>
+    </section>
+
+    <!-- 04 · 工作流 -->
+    <section class="slide">
+      <div class="slide-content">
+        <div class="chrome reveal"><span class="cn">domn-ip-visual · 商业 IP 视觉创作</span><span class="en">Workflow / 04 / 04</span></div>
+        <p class="kicker reveal">工作流</p>
+        <h2 class="s-h reveal">视觉创作十阶段</h2>
+        <div class="fgrid reveal">
+          <div class="fcell"><span class="fn">01</span><p>视觉关键词翻译</p></div>
+          <div class="fcell"><span class="fn">02</span><p>创意母题 CREATIVE_THESIS</p></div>
+          <div class="fcell"><span class="fn">03</span><p>视觉方向发散（2–3 方向）</p></div>
+          <div class="fcell"><span class="fn">04</span><p>表现材质确认 STYLE_LOCK</p></div>
+          <div class="fcell"><span class="fn">05</span><p>Hero Character 主形象</p></div>
+          <div class="fcell"><span class="fn">06</span><p>Hero 审批机制</p></div>
+          <div class="fcell"><span class="fn">07</span><p>核心视觉资产锁定 IDENTITY_LOCK</p></div>
+          <div class="fcell"><span class="fn">08</span><p>母资产建立（三视图/结构/色彩/表情/动作/行为）</p></div>
+          <div class="fcell"><span class="fn">09</span><p>行为视觉化</p></div>
+          <div class="fcell"><span class="fn">10</span><p>主题变体（3–4）</p></div>
+        </div>
+        <div class="foot"><span>十步走完：从一句抽象关键词，到能拿去汇报的提案</span><span>只往前，不回头</span></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER (zara-frontend-slides)
+   =========================================== */
+class SlidePresentation {
+  constructor() {
+    this.slides = Array.from(document.querySelectorAll('.slide'));
+    this.current = 0;
+    this.stage = document.getElementById('deckStage');
+    this.setupStageScale();
+    this.setupKeyboardNav();
+    this.setupTouchNav();
+    this.setupWheelNav();
+    this.showSlide(0);
+  }
+  // 仅独立打开时自缩放；在 iframe 内由父层读取 iframe 真实像素尺寸来驱动，避免时序误差
+  setupStageScale() {
+    if (window.top !== window.self) return;
+    const fit = () => {
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      const vh = document.documentElement.clientHeight || window.innerHeight;
+      const f = Math.min(vw / 1920, vh / 1080);
+      this.stage.style.transformOrigin = '0 0';
+      this.stage.style.transform = `translate(${(vw - 1920 * f) / 2}px, ${(vh - 1080 * f) / 2}px) scale(${f})`;
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(document.documentElement);
+  }
+  setupKeyboardNav() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); this.next(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); this.prev(); }
+      else if (e.key === 'Escape') { try { parent.postMessage({ type: 'skillSlidesClose' }, '*'); } catch (_) {} }
+    });
+  }
+  setupTouchNav() {
+    let sx = 0, sy = 0;
+    this.stage.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    this.stage.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? this.next() : this.prev(); }
+    }, { passive: true });
+  }
+  setupWheelNav() {
+    let lock = false;
+    window.addEventListener('wheel', (e) => {
+      if (lock) return; lock = true; setTimeout(() => (lock = false), 600);
+      e.deltaY > 0 ? this.next() : this.prev();
+    }, { passive: true });
+  }
+  next() { this.showSlide(this.current + 1); }
+  prev() { this.showSlide(this.current - 1); }
+  showSlide(i) {
+    this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+    this.slides.forEach((s, k) => { s.classList.toggle('active', k === this.current); s.classList.toggle('visible', k === this.current); });
+  }
+}
+new SlidePresentation();
+</script>
+</body>
+</html>

@@ -1,0 +1,732 @@
+/* DOMN-STUDIO · 生成式剧场 / 电影级背景
+ * 暗黑机能 × 赛博暗黑幻想。
+ * 结构：全局顶部导航栏 + 16:9 自适应背景画幅（置底）+ 内容浮于其上。
+ * 单一强调色 #006A60（Spotify 青绿，品牌主色）；提亮变体 --accent-strong 供小字文本保对比度。
+ */
+
+/* 英雄区装饰字体：本地字体（项目自带，public/fonts/lemonmilk.otf）。
+   OTF / CFF；family 名 Lemon/Milk；基础拉丁 + 标点（大写已在覆盖内）。 */
+/* 字体体系（见 :root 变量说明）
+ * 中文/英文正文：阿里妈妈方圆体（不加粗）；中文标题：阿里妈妈方圆体 300（大字细、小字粗）；
+ * 元数据/标签：淘宝麦菜体；英文标题/钢印字标：Belanosima-Bold。 */
+@font-face {
+  font-family: "TaoBaoMaiCaiTi";
+  src: url("/fonts/TaoBaoMaiCaiTi-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "AlimamaFangYuanTi";
+  src: url("/fonts/AlimamaFangYuanTiVF-Thin-2.ttf") format("truetype");
+  font-weight: 100 1000;          /* 可变字体，暴露字重轴以便加粗 */
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LogoSCUnboundedSans";
+  src: url("/fonts/LogoSCUnboundedSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LemonMilk";
+  src: url("/fonts/LemonMilk-1.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Belanosima";
+  src: url("/fonts/Belanosima-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ── 色彩 ── */
+  --ink: #000000;            /* 纯黑：舞台底 / 视频盒（S1 英雄区也强制纯黑） */
+  --bg: #000000;            /* 纯黑：全站底色（含 S2–S6 与详情页）；用户指定纯黑 */
+  --surface: #0e0f12;
+  --surface-raised: #15171b;
+  --border: #23262c;
+  --border-soft: #181a1f;
+  --text-primary: #f4f5f7;
+  --text-secondary: #b7bcc4;
+  --text-muted: #767d88;
+  --accent: #006A60;        /* Spotify 青绿（品牌强调色） */
+  --accent-strong: #00B894; /* 提亮青绿，用于 hover / 强强调 */
+  --accent-dim: rgba(0, 106, 96, 0.34);
+  --white: #ffffff;                                      /* 纯白（着色器/色面提亮用，避免散落 #ffffff） */
+
+  /* ── 字阶 ── */
+  --fs-hero: clamp(2.5rem, 6vw, 5rem);
+  --fs-display: clamp(2rem, 4.5vw, 3.4rem);
+  --fs-title: 1.5rem;
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-label: 0.8125rem;            /* 13px：原 11px 偏糊且触发可访问性 lint，提到可读下限 */
+  --fs-num: clamp(1.1rem, 1.6vw, 1.4rem);
+  --fs-h1: clamp(1.75rem, 3vw, 2.5rem);     /* 屏题 ~28–40px */
+  --fs-h2: clamp(1.4rem, 2.4vw, 2rem);      /* 卡题 ~22–32px */
+  --fs-h3: clamp(1.1rem, 1.6vw, 1.35rem);   /* 子标题 ~18–22px */
+
+  /* ── 量度基线（CJK 方圆体下 ch≈全角字宽，舒服阅读 30–45 字/行）── */
+  --measure: 42ch;
+  --measure-wide: 60ch;
+
+  /* ── 圆角 ── */
+  --radius-media: 10px;
+  --radius-pill: 9999px;
+  --radius-chip: 6px;
+
+  /* ── 动效 ── */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-mech: cubic-bezier(0.2, 0.9, 0.2, 1); /* 机械滑块感 */
+  --dur-fast: 200ms;
+  --dur-med: 320ms;
+  --dur-base: 420ms;
+  --dur-slow: 800ms;
+
+  /* ── 字体栈（零下载，三态混排） ── */
+  --font-sans: "AlimamaFangYuanTi", system-ui, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;                                  /* 中文/英文正文：阿里妈妈方圆体（不加粗） */
+  --font-serif: "Songti SC", "SimSun", "Noto Serif SC", Georgia, serif;
+  --font-mono: "TaoBaoMaiCaiTi", ui-monospace, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;                                   /* 元数据 / 标签 */
+  /* 中文标题：LogoSC Unbounded Sans（仅 400 单字重，写 700 会合成加粗发糊）；
+     混排的拉丁字符回退到阿里妈妈方圆体。 */
+  --font-cn-head: "LogoSCUnboundedSans", "AlimamaFangYuanTi", var(--font-sans);
+  /* 装饰英文字体（钢印字标用，按需从 Google Fonts 加载，离线回退系统衬线） */
+  --font-decor: "Cormorant Garamond", "Playfair Display", Georgia,
+    "Times New Roman", serif;
+  /* 英文标题 / 钢印字标：Belanosima-Bold（public/fonts/Belanosima-Bold.ttf） */
+  --font-display: "Belanosima", "LemonMilk", Impact, "Arial Narrow Bold",
+    var(--font-sans);
+
+  /* ── 布局 ── */
+  --topbar-h: clamp(56px, 6.4vh, 74px); /* 全局顶部导航栏高度 */
+  --pad-x: clamp(1.5rem, 3vw, 3rem);
+  --content-max: 1500px;            /* 内容屏统一限宽（S2/S4/S5/S6 标题栏一致，避免滑屏栏宽跳动） */
+  --content-w: 92vw;
+}
+
+* { box-sizing: border-box; }
+
+/* 禁止合成加粗（synthetic bold）：本项目中文字体或仅单字重、或自带真实字重轴，
+   写 700 而没有对应实例时浏览器会把字形横向叠印一次，中文笔画立刻发糊、出双影。
+   故全站禁用合成加粗，标题一律走字体的真实字重。 */
+* { font-synthesis-weight: none; }
+
+/* 隐藏所有滚动条，但保留滚动能力（全屏滚动叙事站，滚动条属视觉噪音） */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+html {
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 400;                                   /* 中文/英文正文不加粗（阿里妈妈方圆体） */
+  font-size: var(--fs-body);
+  line-height: 1.7;                                   /* 轻字重下略增行距保可读性 */
+  color: var(--text-primary);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  line-break: strict;                                 /* CJK 避头尾严格模式 */
+  overflow-wrap: anywhere;                            /* 长串 / URL 强制断行，避免溢出 */
+}
+
+/* ── 首页滑页：home 页整页竖向满屏滑页，S1–S6 每个 .slide 都是 snap 子元素（含 S3–S6）。
+   真正滚动容器是 window（html），故 snap 挂在 html:has(body.is-home) 上，而非某内层窗口。
+   用 mandatory（每次滚动必定吸附到最近整屏，才是真正的「满屏滑页」手感；proximity 只在贴近边界才吸，
+   日常滚动毫无吸附感，等于没做）。每个 .slide 都已严格 100dvh 且都是 snap 点，mandatory 不会困死。
+   .slide 本身带 scroll-snap-align:start + scroll-snap-stop:always，每次翻一屏、整页节奏一致。── */
+html:has(body.is-home) {
+  scroll-snap-type: y mandatory;
+}
+/* 首页每个 .slide 都是 snap 子元素（含组件渲染的 S3/S4 根），统一满屏逐屏翻页。
+   放在 global 而非 index 作用域，确保组件渲染出的 section 也能命中。 */
+.slide {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* ── 首页统一屏头系统（S2/S3/S4/S6/S8 共享，遵循 design.md 字阶与布局）──
+   单一字阶：标题统一用 --fs-display（页面大标题），eyebrow 用 mono 小字 + accent。
+   去序号（R3）：不再用描边大数字，仅以 mono eyebrow 标签标示板块。
+   统一留白节奏：各 slide 屏头 padding / margin 一致，hairline 取代 2px accent 粗线。 */
+.slide-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.9rem;
+  padding-bottom: 0.8rem;
+  margin-bottom: clamp(1rem, 2.4vh, 1.8rem);
+  border-bottom: 1px solid var(--border);
+}
+.slide-head__t { display: flex; flex-direction: column; }
+.slide-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 0.28rem;
+}
+.slide-title {
+  font-family: var(--font-cn-head);
+  font-weight: 400;                 /* LogoSC 仅 400 单字重，禁止合成加粗 */
+  font-size: var(--fs-display);     /* 页面大标题：clamp(2rem,4.5vw,3.4rem) */
+  line-height: 1.06;
+  letter-spacing: 0;
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* 中文排版特性（渐进增强：text-spacing-trim 需 Chrome 123+，旧浏览器自动忽略，无副作用） */
+:lang(zh-CN) {
+  font-feature-settings: "palt" 1;                    /* 标点挤压，去全角标点两侧余白 */
+  text-spacing-trim: trim-start;
+}
+
+/* ── 全站生成式氛围层：首页底层介质（latent-space 流场着色器） ── */
+.field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;                      /* 在内容之下、body 背景之上 */
+  pointer-events: none;
+  background: var(--bg);           /* 着色器未就绪时纯黑兜底 */
+}
+.field canvas { width: 100%; height: 100%; display: block; }
+/* 子页：关闭氛围层（各板块有独立 TitleCard 视频） */
+body:not(.is-home) .field { display: none; }
+
+/* 首页内容浮于氛围层之上 */
+body.is-home .page { position: relative; z-index: 1; }
+
+img, video { max-width: 100%; display: block; }
+
+a { color: inherit; text-decoration: none; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── 排版工具类 ── */
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 400;                                   /* 淘宝麦菜体为单字重笔刷体，合成加粗会糊 */
+  letter-spacing: 0.05em;                             /* 笔刷体收紧字距（原为几何等宽 0.22em） */
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mono { font-family: var(--font-mono); }
+  .muted { color: var(--text-secondary); }
+  .dim { color: var(--text-muted); }
+
+  /* ── Reveal 入场（首页 about 板块跨组件共用，JS 加 .in 触发）── */
+  .reveal { opacity: 0; transform: translateY(18px); filter: blur(6px); transition: opacity var(--dur-base) var(--ease), transform var(--dur-base) var(--ease), filter var(--dur-base) var(--ease); will-change: opacity, transform; }
+  .reveal.in { opacity: 1; transform: none; filter: blur(0); }
+
+/* ── 按钮 ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-pill);
+  padding: 9px 22px;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.btn-primary { background: var(--accent); color: #0a0c0e; }
+.btn-primary:hover { background: var(--accent-strong); }
+.btn-ghost { background: transparent; color: var(--text-primary); border-color: #5a606b; }
+.btn-ghost:hover { border-color: var(--text-primary); }
+
+/* ════════════════════════════════════════════════
+   TOPBAR · 全局顶部导航栏（跨页常驻，浮于画幅之上）
+   ════════════════════════════════════════════════ */
+.topbar {
+  view-transition-name: hud;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: clamp(0.8rem, 2vw, 2rem);
+  padding: 0 clamp(1rem, 3vw, 2.4rem);
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.66);
+  backdrop-filter: blur(12px) saturate(1.06);
+  -webkit-backdrop-filter: blur(12px) saturate(1.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+/* 子页（非首页）：导航栏不透明，避免滚动时项目内容透出到导航栏 */
+body:not(.is-home) .topbar {
+  background: var(--bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 品牌锁定：几何符号 + 字标（logo 透明底，不另加框/底色） */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex: 0 0 auto;
+}
+.brand .symbols { display: block; height: 20px; width: auto; }
+.brand-mark {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;                        /* 笔刷体字标收紧（原几何等宽 0.3em） */
+  text-transform: uppercase;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.brand-mark b { color: var(--accent-strong); font-weight: 700; }
+
+/* 中部：编号 + 英文板块导航 */
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.6rem, 1.8vw, 1.8rem);
+  margin-left: auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.topnav::-webkit-scrollbar { display: none; }
+
+.nav-item {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.4rem 0;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: color var(--dur-base) var(--ease);
+}
+/* 机械滑块：底部轨道滑出 */
+.nav-item::after {
+  content: "";
+  position: absolute; left: 0; bottom: 0;
+  width: 100%; height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-base) var(--ease-mech);
+}
+.nav-item:hover,
+.nav-item:focus-visible,
+.nav-item.is-active { color: var(--text-primary); }
+.nav-item:hover::after,
+.nav-item:focus-visible::after,
+.nav-item.is-active::after { transform: scaleX(1); }
+
+.nav-num {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;                         /* 笔刷体编号收紧 */
+  color: var(--text-muted);
+  transition: color var(--dur-base) var(--ease);
+}
+.nav-item:hover .nav-num,
+.nav-item:focus-visible .nav-num,
+.nav-item.is-active .nav-num { color: var(--accent-strong); }
+
+.nav-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;                            /* 收到全局标签字距，与 .nav-num / .page-eyebrow 对齐 */
+  text-transform: uppercase;
+  line-height: 1;
+}
+/* 导航中文副标：双语受众（求职 + 获客）更直读，契合双目标定位 */
+.nav-label-cn {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--fs-label);
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+/* ════════════════════════════════════════════════
+   STAGE · 电影黑边画框（置底，交叉淡入）
+   画框整体为 8:9，视频以 contain 完整显示（不裁切）。
+   8:9 画框 ⇒ contain 后 视频占满宽、上下黑边总高 = 视频短边(高)，
+   即「视频短边 = 上下黑边距离」。黑边在视频之外、不放大、不模糊。
+   ════════════════════════════════════════════════ */
+.stage {
+  view-transition-name: stage;
+  position: absolute;
+  inset: 0;
+  background: var(--ink); /* 视频盒子之外的区域（左/底）显示页面底色 */
+  z-index: 0;
+}
+/* 背景视频画框（置底）：
+   以「右上角」为锚点（贴导航栏底边 + 贴页面右边），
+   高度锁定为「导航栏底部 → 底部栏顶部的距离」（即视频短边），
+   宽度按 16:9 推出 ⇒ 盒子本身就是 16:9，视频天然铺满、无黑边。
+   首页有 loop 栏 ⇒ 底部再扣一条 --topbar-h；其余页无 loop 栏 ⇒ 只扣顶部导航栏。 */
+.stage-frame {
+  position: absolute;
+  top: var(--topbar-h);            /* 锚：贴导航栏底边 */
+  right: 0;                        /* 锚：贴页面右边 */
+  height: calc(100dvh - var(--topbar-h));                     /* 非首页：导航栏底 → 视口底 */
+  width: calc((100dvh - var(--topbar-h)) * 16 / 9);           /* 16:9 推出宽度 */
+  max-width: 100%;
+  overflow: hidden;
+  background: #000;
+  transform-origin: top right;     /* 进入动效自锚点放大 */
+  transition: transform var(--dur-slow) var(--ease),
+    filter var(--dur-slow) var(--ease);
+}
+#stage-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block; z-index: 1;
+}
+
+/* 降级：无 WebGL 时的 DOM video 交叉淡入（置于画布之下） */
+.stage-fallback { position: absolute; inset: 0; z-index: 0; }
+.stage-fallback video {
+  position: absolute; inset: 0; margin: auto;
+  width: 100%; height: 100%;
+  object-fit: cover;               /* 盒子即 16:9 ⇒ 视频铺满、无黑边 */
+  object-position: center;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease);
+}
+.stage-fallback video.is-on { opacity: 1; }
+
+/* 无叠加层、无扫描线、无字幕：背景视频保持原生画质与几何，不做任何拉伸/畸变。 */
+
+/* 首页独有：底部 loop 栏占位 → 画框再扣掉一条栏高（导航栏底 → loop 栏顶） */
+body.is-home .stage-frame {
+  height: calc(100dvh - 2 * var(--topbar-h));
+  width: calc((100dvh - 2 * var(--topbar-h)) * 16 / 9);
+}
+
+/* 无全局压暗层：背景视频保持原生画质，内容区置于左侧负空间，不与画面重叠。 */
+
+/* 进入板块：画幅收束 + 提亮（View Transition 前的一拍） */
+body.is-entering .stage-frame {
+  transform: scale(1.05);
+  filter: brightness(1.14) blur(4px);
+}
+
+/* ════════════════════════════════════════════════
+   LOOPBAR · 底部 LogoLoop 栏（与导航栏同高，全局常驻）
+   ════════════════════════════════════════════════ */
+.loopbar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: var(--topbar-h);          /* 与导航栏同高 */
+  z-index: 6;
+  background: rgba(0, 0, 0, 0.66);          /* 与全局导航栏一致 */
+  backdrop-filter: blur(12px) saturate(1.06);
+  -webkit-backdrop-filter: blur(12px) saturate(1.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  /* 横向裁掉循环副本，纵向放行 hover tooltip（clip+visible 不会把 visible 强转 auto） */
+  overflow-x: clip;
+  overflow-y: visible;
+}
+.loopbar .logoloop { color: var(--text-muted); width: 100%; }
+.loopbar .logoloop__item { color: var(--text-secondary); }
+.loopbar .logoloop--fade::before,
+.loopbar .logoloop--fade::after { opacity: 0.92; }
+.loopbar .logoloop__link:hover,
+.loopbar .logoloop__item:hover { color: var(--text-primary); }
+
+/* hover tooltip：自绘、只显示品牌名，纵向浮出 bar 上方 */
+.loop-logo { position: relative; display: inline-flex; align-items: center; }
+.loop-logo__tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 3px 8px;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--text-primary);
+  background: rgba(18, 18, 20, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 20;
+}
+.logoloop__item:hover .loop-logo__tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ════════════════════════════════════════════════
+   PAGE · 内容浮于画幅之上
+   ════════════════════════════════════════════════ */
+.page {
+  position: relative;
+  z-index: 5;
+  min-height: 100vh;
+}
+.page-inner {
+  position: relative;
+  z-index: 6;
+  width: min(100%, 46vw);
+  padding: var(--topbar-h) clamp(1.5rem, 4vw, 4.5rem) 6rem;
+  min-height: 100vh;
+}
+/* 详情页（无全屏英雄区）：顶部仅留出顶栏高度 + 少量呼吸，避免内容贴住导航栏 */
+.page-inner.detail {
+  padding-top: calc(var(--topbar-h) + 1rem);
+}
+/* 子页（无全屏背景视频）：内容区限宽居中，形成「左标题 4 成 / 右视频 6 成」构图 */
+body:not(.is-home) .page-inner {
+  width: min(100%, 90vw);
+  max-width: 1360px;
+  margin-inline: auto;
+}
+.page-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;                             /* 笔刷体标签收紧字距 */
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  margin: 0 0 1rem;
+}
+/* 英雄区下方内容：实底 + 高于固定英雄区（z20），滚动时覆盖在英雄区之上 */
+.page-body {
+  position: relative;
+  z-index: 21;
+  background: var(--bg);
+}
+.page-title {
+  font-family: var(--font-cn-head);
+  font-size: var(--fs-display);
+  font-weight: 400;                                   /* LogoSC 仅 400 单字重，禁止合成加粗 */
+  line-height: 1.08;
+  letter-spacing: 0;                                  /* 中文标题保持 0 字距，避免笔画挤在一起 */
+  margin: 0 0 1.2rem;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+}
+.page-lede {
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: var(--measure);
+  margin: 0;
+  text-wrap: pretty;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.55);
+}
+
+.section-block { margin-top: 3.5rem; }
+.section-block > h2 {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;                          /* 笔刷体分节标题收紧 */
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 1.4rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* 工作流 / 工具树 */
+.flow-list { display: flex; flex-direction: column; gap: 0.9rem; }
+.flow-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-media);
+  background: rgba(14, 15, 18, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.flow-item .fi-num {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-size: var(--fs-small);
+}
+.flow-item .fi-body .fi-t { font-weight: 600; margin: 0 0 0.25rem; }
+.flow-item .fi-body .fi-d { color: var(--text-secondary); font-size: var(--fs-small); }
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;                          /* 笔刷体返回链接收紧 */
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  transition: color var(--dur-fast) var(--ease);
+}
+.back-link:hover { color: var(--accent); }
+
+/* ════════════════════════════════════════════════
+   VIEW TRANSITIONS · 微 glitch 转场
+   ════════════════════════════════════════════════ */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.42s;
+  animation-timing-function: var(--ease);
+}
+::view-transition-old(root) { animation-name: vt-out; }
+::view-transition-new(root) { animation-name: vt-in; }
+@keyframes vt-out {
+  to { opacity: 0; transform: translateY(-6px); filter: blur(2px); }
+}
+@keyframes vt-in {
+  from { opacity: 0; transform: translateY(8px); }
+  40% { opacity: 1; }
+  /* 微 glitch：RGB 错位抖动 */
+  42% { transform: translateX(-3px); filter: drop-shadow(2px 0 var(--accent)) drop-shadow(-2px 0 var(--accent-strong)); }
+  46% { transform: translateX(2px); }
+  50% { transform: translateX(0); filter: none; }
+  to { opacity: 1; transform: none; }
+}
+
+/* ════════════════════════════════════════════════
+   响应式
+   ════════════════════════════════════════════════ */
+@media (max-width: 1080px) {
+  /* 顶栏放不下英文板块名时，只留编号 */
+  .nav-label { display: none; }
+  .nav-num { font-size: 0.78rem; }
+  .nav-item { gap: 0; }
+}
+
+@media (max-width: 900px) {
+  /* 画幅：移动端竖屏不做黑边画框，恢复全屏背景，内容在其上滚动 */
+  .stage-frame,
+  body.is-home .stage-frame {
+    inset: 0; height: auto; width: auto; aspect-ratio: auto; max-width: none;
+  }
+  #stage-canvas,
+  .stage-fallback video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .page-inner {
+    width: 100%;
+    padding-top: var(--topbar-h);
+  }
+}
+
+@media (max-width: 620px) {
+  .brand-mark { display: none; }
+  .topbar { gap: 0.7rem; }
+  .topnav { gap: 0.9rem; }
+  .nav-label-cn { display: none; }
+}
+
+/* 矮屏（笔记本横屏 ~720h）兜底：高密度屏内容超出视口时允许整屏内滚动，
+   避免 scroll-snap 把内容切半、割裂阅读 */
+@media (max-height: 760px) {
+  .slide-inner { overflow-y: auto; }
+}
+
+/* ════════════════════════════════════════════════
+   REDUCED MOTION
+   ════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+  body.is-entering .stage-frame { transform: none; filter: none; }
+  .reveal { opacity: 1; transform: none; filter: none; transition: none; }
+}
+
+/* ════════════════════════════════════════════════
+   详情页共享组件
+   ════════════════════════════════════════════════ */
+.char-ava { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-family: var(--font-mono); color: var(--text-primary); background: var(--accent-dim); border: 1px solid var(--border); }
+
+.player { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+.player__pane { position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 9; background: #000; }
+.player__pane video, .player__pane img { width: 100%; height: 100%; object-fit: cover; }
+.player__tag { position: absolute; top: 8px; left: 8px; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--text-primary); background: color-mix(in srgb, var(--bg) 70%, transparent); padding: 2px 8px; border-radius: var(--radius-pill); }
+
+.duallink { margin-top: 2.5rem; border-top: 1px solid var(--border); padding-top: 1.5rem; }
+.duallink h3 { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin: 0 0 1rem; }
+.duallink__list { display: flex; flex-wrap: wrap; gap: .6rem; }
+.duallink__item { display: flex; align-items: center; gap: .5rem; border: 1px solid var(--border); border-radius: var(--radius-pill); padding: .4rem .9rem; color: var(--text-secondary); text-decoration: none; font-size: var(--fs-small); transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+.duallink__item:hover { border-color: var(--accent); color: var(--text-primary); }
+.duallink__item .k { font-family: var(--font-mono); color: var(--accent-strong); font-size: var(--fs-label); }
+
+.facts .tag { font-family: var(--font-mono); font-size: var(--fs-small); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 4px 12px; }
+
+/* ══ 详情页标题（要求 5：英文作为标题，中文作标题说明）══ */
+.detail-head { margin-bottom: clamp(2rem, 5vh, 3.5rem); }
+.detail-head .display-type {
+  font-family: var(--font-display);                          /* Belanosima：英文大标题 */
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: 0;
+  margin: 0 0 1rem;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+/* ══ 详情页导语段落（原 statement 无样式 → 全宽无量度，CJK 每行 ~80 字）══ */
+.statement {
+  font-size: var(--fs-body);
+  line-height: 1.8;
+  max-width: var(--measure);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+.detail-head .en-title {
+  font-family: var(--font-sans);                             /* 中文副标：阿里妈妈方圆体 */
+  font-size: var(--fs-body);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;                                      /* 中文副标，非大写 */
+  color: var(--text-muted);
+  margin: 0 0 0.7rem;
+}
+
+/* ══ 全局隐藏滚动条（保留滚动功能） ══ */
+html { scrollbar-width: none; -ms-overflow-style: none; }
+* { scrollbar-width: none; }
+::-webkit-scrollbar { width: 0; height: 0; display: none; }

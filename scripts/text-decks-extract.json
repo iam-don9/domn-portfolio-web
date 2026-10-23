@@ -1,0 +1,350 @@
+{
+  "skills": [
+    {
+      "en": "domn-film-scifi-short-film",
+      "name": "科幻短片剧本写作流程",
+      "version": "v1.0",
+      "positioning": "把模糊科幻脑洞写成 ≤30 分钟可开拍的剧本：先点子卡，再拍子表，最后按模板出剧本，含双向测试与结尾反转。",
+      "excerptTitle": "科幻短片剧本 · 剧本格式片段",
+      "excerptBody": "　　阿哲戴上手套，把一叠硬盘按日期码放整齐。第三块盘上贴着标签：\n　　「父亲 / 最后三个月」。他把它推到一边，先拿最上面那块。\n……\n　　　　　　　　　　　　阿哲\n　　　　　整理需要七天。这七天里，请不要看他生前的照片。\n　　　　　　　　　　　　客户\n　　　　　（点头）七天。\n……\n　　屏幕暗下去的一瞬，反光里映出一行没来得及关的日志：\n　　　　「代理：阿哲　　维护人：父亲　　起始：八年前」\n　　　　　　　　　　　　　　　　　　　　　　切黑",
+      "excerptCaption": "剧本正文按 assets/script-template.md 输出，含动作线与克制对白。",
+      "painPoints": [
+        "想了个科幻脑洞，却写不出可拍的剧本，全片都在解释设定。",
+        "点子很多，不知道哪个值得拍、哪个其实是伪科幻。",
+        "结尾想不出反转，最后十秒撑不起整个短片的重量。"
+      ],
+      "solution": "先抛脑洞点子卡 → 再过塌架+情感双向测试筛选 → 定结构倒推拍子表 → 按模板出剧本。",
+      "outOfScope": "超过 30 分钟的载体改用 domn-film-screenplay-save-the-cat。",
+      "workflow": [
+        "锁定约束",
+        "写成一句话公式",
+        "生成 12 个点子",
+        "筛选收敛到一个",
+        "先写最后 10 秒",
+        "按模板定结构倒推填拍",
+        "写成剧本",
+        "交付前自检"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "八步执行流程与交付物说明（logline、点子卡、拍子表、剧本）" },
+        { "path": "assets/script-template.md", "role": "剧本格式模板（标题页／拍子表／动作线／对白／结尾）" },
+        { "path": "assets/idea-worksheet.md", "role": "点子发散工作表（原料库×12 算子）" },
+        { "path": "references/01-ideation-engine.md", "role": "原料库取料、12 算子公式与示例" },
+        { "path": "references/02-short-film-structure.md", "role": "短片结构模板与四种收法详解" },
+        { "path": "references/03-craft-and-pitfalls.md", "role": "人物三件套、对白规则与失败模式" },
+        { "path": "references/04-source-map.md", "role": "中国科幻作家谱系与可改编篇目" },
+        { "path": "references/05-short-form-masters.md", "role": "短篇与短片范本谱系" },
+        { "path": "references/worked-example.md", "role": "全流程跑通示例含成片剧本" }
+      ]
+    },
+    {
+      "en": "domn-film-screenplay-save-the-cat",
+      "name": "救猫咪剧本结构法",
+      "version": "v1.0",
+      "positioning": "把一句话提案匹配到 10 大故事题材、套 15 拍结构表，产出可写作的节拍表与大纲，专治长片/剧集搭不出骨架。",
+      "excerptTitle": "救猫咪节拍表 · 工作模板片段",
+      "excerptBody": "1 开场画面    第1页     故事开始前的快照\n2 主题呈现    第5页     有人对他说句他当时不懂的话\n3 铺垫        1–10页    介绍 A 故事全部角色\n4 推动(催化剂) 第12页    第一次剧烈打击\n5 争论(辩论)  12–25页   主人公对要走的路产生疑惑\n……\n9 中点        第55页    分水岭：倒计时、假胜或假败\n11 一无所有   第75页    人为的失败＋死亡的气息\n15 终场画面   第110页   与开场呼应，变化已发生",
+      "excerptCaption": "节拍表工作模板的核心栅格，逐拍定页码与功能。",
+      "painPoints": [
+        "想写剧本但搭不出骨架，故事散成一团没有起伏。",
+        "分不清自己的片子到底是哪种类型，套错节拍表。",
+        "非线性、文艺片硬套 15 拍，反而把暧昧感毁了。"
+      ],
+      "solution": "先抽 6 个信号 → 匹配主类型+副类型 → 套 15 拍结构表 → 用同类片校验推演。",
+      "outOfScope": "≤30 分钟科幻短片改用 domn-film-scifi-short-film；非线性/散文式/作者论艺术片不适用。",
+      "workflow": [
+        "抽取 6 个信号",
+        "分流科幻提案",
+        "匹配题材",
+        "套 15 拍结构表",
+        "同类片校验与技巧注入"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "救猫咪方法论、10 题材与 15 拍结构表总说明" },
+        { "path": "assets/beat-sheet-template.md", "role": "节拍表工作模板（基本信息/logline/15 拍/边界复核）" },
+        { "path": "references/01-beat-sheet.md", "role": "15 拍原书定义、自检问题与页码换算" },
+        { "path": "references/02-ten-genres.md", "role": "10 大题材判定清单与同类片单" },
+        { "path": "references/03-genre-matching.md", "role": "匹配决策树、反证法与混合类型处理" },
+        { "path": "references/04-craft-tools.md", "role": "术语、结构装置与题材专属配角" },
+        { "path": "references/05-limits-and-failure-modes.md", "role": "边界、不适用类型清单与跨文化适配" },
+        { "path": "references/06-chinese-hard-scifi.md", "role": "科幻短篇到结构的适配（塌架测试、模型 A/B）" }
+      ]
+    },
+    {
+      "en": "domn-film-seedance-format",
+      "name": "Seedance 提示词格式",
+      "version": "v1.0",
+      "positioning": "把散乱的生视频想法整理成电影级七段式提示词：定质感、绑素材、锁契约、排分段，可直接喂给 Seedance 执行。",
+      "excerptTitle": "Seedance 提示词 · 七段式骨架",
+      "excerptBody": "【1.全局设定】  锁死画面质感 · 第一句定实拍/动画\n【2.素材绑定】  每张图只干一件事 · 声明不继承什么\n【3.画面契约】  主体怎么认、怎么保持连续\n【4.执行契约】  导演怎么拍 · 速度/迟切/机制锁/轴线\n【5.场景】      在哪、什么光、空场状态\n【6.分段计划】  逐段拆时间轴 · 段内多切\n【7.负向约束】  编号列「不要……」 · 最多 5 条\n整条提示词连续写在一个代码块里，不加解释\n对白只在有台词时写，落点标时间码",
+      "excerptCaption": "七段式骨架是提示词内部结构，整条连续可一键复制。",
+      "painPoints": [
+        "写生视频提示词全靠形容词堆砌，喂给模型就翻车。",
+        "对白和方言不知道怎么规定，写出来的台词很糊。",
+        "提示词散乱没结构，想改也改不动。"
+      ],
+      "solution": "先定七段骨架 → 首句锁质感 → 写清对白三要素与契约 → 连续成块输出。",
+      "outOfScope": "不负责创意本身，只规范格式；换题材不换结构。",
+      "workflow": [
+        "全局设定（锁质感）",
+        "素材绑定",
+        "画面契约",
+        "执行契约",
+        "场景",
+        "分段计划",
+        "负向约束"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "七段式结构规范与对白语言规定" },
+        { "path": "references/01-structure-and-contracts.md", "role": "七段每段写法与各执行契约写法" },
+        { "path": "references/02-dialogue-and-language.md", "role": "对白与语言完整经验（语种/方言/腔调）" },
+        { "path": "references/03-cantonese-phrases.md", "role": "粤语发音、口头禅与专有叫法" },
+        { "path": "references/04-taiwanese-accent.md", "role": "台湾腔语气词与惯用语" },
+        { "path": "agents/openai.yaml", "role": "智能体配置（触发与角色设定）" }
+      ]
+    },
+    {
+      "en": "domn-film-character-showcase",
+      "name": "人物展示动画导演",
+      "version": "v1.0",
+      "positioning": "为 AI 视频写角色展示/亮相分镜与提示词，让陌生观众几秒内记住脸、能力与性格，全程无字幕。",
+      "excerptTitle": "角色展示 · 输出契约片段",
+      "excerptBody": "④ 分镜表（无「字幕」列，H10）\n  镜号 起止 时长 景别机位 画面 运镜 台词声音 参考图\n  每镜落一条：能力发生一次、签名 Pose 写到可执行\n\n⑥ 台词/声音卡（不设字幕字段）\n  台词：「我记得每一只没能飞回来的鹤。」\n  时间码：8.0s – 9.8s\n  呈现方式：A 角色发声（口型同步 + 后期配音）\n  字幕：无（H10）",
+      "excerptCaption": "人物展示导演的交付契约：分镜表与无字幕台词卡。",
+      "painPoints": [
+        "角色展示片做完，观众记不住脸、不知道他会什么。",
+        "画面里糊满字幕，反而破坏了角色的酷感。",
+        "画风每镜都不一样，根本不像同一个人。"
+      ],
+      "solution": "先读用户画风锁锁定块 → 抽八项档案 → 排四拍 → 配镜头语法 → 拆 clip 写提示词。",
+      "outOfScope": "完整打戏交 domn-film-action-director；变身段交 henshin-director；假面骑士交 kamen-raider。",
+      "workflow": [
+        "读取画风锁定",
+        "抽取八项档案",
+        "判定展示原型",
+        "立人物真相",
+        "排四拍结构",
+        "配镜头语法",
+        "落台词与声音",
+        "拆 clip 衔接",
+        "过质检"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "角色展示导演三层架构、11 条硬规则与模式路由" },
+        { "path": "references/01-character-dossier.md", "role": "角色档案八项与性格→动作转译" },
+        { "path": "references/02-showcase-archetypes.md", "role": "P1–P8 展示原型判定与机位" },
+        { "path": "references/03-four-beat-and-duration.md", "role": "四拍结构与时长分镜矩阵" },
+        { "path": "references/04-camera-grammar.md", "role": "11 个展示镜头语法与运镜参数" },
+        { "path": "references/05-line-and-audio.md", "role": "台词三式、落位与无字幕落地" },
+        { "path": "references/06-consistency-and-negatives.md", "role": "三锚点与无字幕负面词" },
+        { "path": "references/07-tools-and-multiclip.md", "role": "模型选型与多 clip 衔接" },
+        { "path": "references/08-diagnose-and-rewrite.md", "role": "25 条病症-病因-处方诊断" },
+        { "path": "references/09-output-contracts.md", "role": "输出契约八段与 10s 范例" },
+        { "path": "references/10-visual-style-and-keyart.md", "role": "画风随角色与 Key Art 生图" },
+        { "path": "references/11-variants-and-edge-cases.md", "role": "V1–V7 变体处理" }
+      ]
+    },
+    {
+      "en": "domn-film-action-director",
+      "name": "武打动作导演",
+      "version": "v1.0",
+      "positioning": "为 AI 视频写打戏分镜与提示词，让每帧都有明确因果：一触即分、空间单向推进、重击三档、终结帧。",
+      "excerptTitle": "动作导演 · 分镜提示词片段",
+      "excerptBody": "② 战术节奏图（ASCII）\n路线：近岸石阶 → 檐顶 → 庭院纵深 → 后院水畔(终结)\n回合：R1 1-3.5s  R2 3.5-6s  R3 6-9s  终结 13-15s\n重击：较早 @6.5s(撞穿照壁)  终结 @13-15s(水面终结帧)\n跳位三连：贴脸·右·低位 → 全景·左·檐顶 → 中景·正面·水畔\n\n③ 分镜提示词：连续覆盖 0.0 → 总时长，不重叠不留空档\n  先完成动作与切镜，秒数最后填\n  终结重击写成一整镜：高速进入 → 慢镜蓄力 → 接触\n  恢复高速 → 俯冲跟落 → 落地破坏 → 终结帧，命中后不切镜\n交付正文清除全部自查编号，只留时间戳与反馈，纯净连续文本",
+      "excerptCaption": "武打分镜的战术节奏图与终结重击整镜写法。",
+      "painPoints": [
+        "打戏提示词写出来发飘、接不上、没打击感。",
+        "两人缠成一团，或者打完又回到原点。",
+        "特效满屏但动作空，重击不炸、结尾拖沓。"
+      ],
+      "solution": "先看清角色场景 → 定专属打法 → 铺整场运动路线 → 排回合重击 → 成稿填秒数。",
+      "outOfScope": "只诊断/补强已有打戏时按 M2；不写与战斗无关的文戏。",
+      "workflow": [
+        "看清角色与场景",
+        "定打法",
+        "铺整场运动路线",
+        "排回合与重击",
+        "按模式成稿"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "三层架构、10 条铁律与模式路由" },
+        { "path": "references/01-action-engineering.md", "role": "武器与武学逻辑、专属打法" },
+        { "path": "references/02-rhythm-structure.md", "role": "回合节奏与两种慢、重击三档" },
+        { "path": "references/03-continuity-camera.md", "role": "动势衔接与防发飘运镜" },
+        { "path": "references/04-feedback-destruction.md", "role": "动作-反馈闭环与场景破坏" },
+        { "path": "references/05-arsenal.md", "role": "动词弹药库与违禁词表" },
+        { "path": "references/06-diagnose-and-rewrite.md", "role": "病症-病因-处方诊断改写" },
+        { "path": "references/07-output-contracts.md", "role": "输出格式、字数契约与自检" }
+      ]
+    },
+    {
+      "en": "domn-film-henshin-director",
+      "name": "变身动作指导",
+      "version": "v1.0",
+      "positioning": "为 AI 视频写变身/变形/合体分镜与提示词，让形态单向收敛、每步变化可见、观众始终认得是同一个人。",
+      "excerptTitle": "变身导演 · 四拍时间轴片段",
+      "excerptBody": "① 类型判定：先定 19 亚类之一（着装装甲/兽化/物件化…）\n  判错类型，后面全错\n\n② 四拍时间轴\nT0 触发 0-1.5s → T1 解构 1.5-4s → T2 重组 4-8s → T3 定格 8-10s\n  腰带核心亮起    旧装束褪去剥离   胸甲→肩→臂→腿   完成态定立\n  仰拍+锚点特写   环绕+局部接力    逐件咬合加速     极慢环绕·主体不动\n咬合序列：胸甲(磁吸)→肩甲(展开)→臂甲(缠绕)→腿甲(折叠)→头盔(覆盖)\n锚点时序：T0 亮起 → T1 全程可见 → T2 最后锁定 → T3 特写确认",
+      "excerptCaption": "变身戏的四拍时间轴与部件咬合序列（输出契约）。",
+      "painPoints": [
+        "变身变到一半卡住、弹回原样，或认不出是谁。",
+        "新旧形态鬼畜叠影，特效把主体整个糊死。",
+        "最后亮相不帅，没有「穿上去」的咬合逻辑。"
+      ],
+      "solution": "先判定变身类型 → 定全程可见锚点 → 排四拍(解构慢重组快) → 配形态语法 → 拆 clip 成稿。",
+      "outOfScope": "变身后战斗交 action-director；假面骑士特摄交 kamen-raider。",
+      "workflow": [
+        "判定变身类型",
+        "定视觉锚点",
+        "排四拍结构",
+        "配形态语法",
+        "成稿拆 clip"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "19 亚类类型学、四拍结构与 10 条铁律" },
+        { "path": "references/01-transformation-taxonomy.md", "role": "变身类型 6 维判定" },
+        { "path": "references/02-four-beat-structure.md", "role": "四拍时间结构与节奏律" },
+        { "path": "references/03-form-language-and-camera.md", "role": "形态构建镜头语法" },
+        { "path": "references/04-workflow-and-tools.md", "role": "多 clip 拼接与双参考图" },
+        { "path": "references/05-arsenal.md", "role": "动词弹药库与恐怖强度分档" },
+        { "path": "references/06-diagnose-and-rewrite.md", "role": "变身失败诊断与改写" },
+        { "path": "references/07-output-contracts.md", "role": "输出契约、字数契约与自检" }
+      ]
+    },
+    {
+      "en": "domn-film-style-deconstruct",
+      "name": "视觉风格逆向拆解流程",
+      "version": "v1.0",
+      "positioning": "把一种现成视觉风格拆成可执行技术清单，再拍成冷面吐槽式教程短片：拆解文档+口播文案+分镜+提示词。",
+      "excerptTitle": "风格拆解 · 分镜表桥接片段",
+      "excerptBody": "## 一、镜表\n镜型：复刻镜(照参数拍出味)／演示镜(把参数摆进画面)／对比镜(同镜两遍只差一参数)\n# 时间码 口播(对应行) 画面 画面里的荒诞 镜型 本镜要验的参数\n（时间码与提示词【6.分段计划】必须逐镜一致）\n\n## 二、覆盖自查（任何一行写「无」就是漏了）\n开场命题 / 套路一–五 / 本质揭示 / 元评论 / 收口\n  本质揭示：各套路复刻镜各截 1.0 秒快闪重剪，配参数字幕卡\n  元评论：给该风格的空镜(日剧=傍晚电车/便利店灯/雨后街)\n  收口：回到开场机位(闭环)，或停在最标志性那条套路",
+      "excerptCaption": "分镜表是口播文案和生视频提示词之间的桥，每段都要有镜。",
+      "painPoints": [
+        "能感觉到一种风格的味道，但说不清、拍不出、教不会。",
+        "拆出来的全是通用影视手艺，换个主题也成立。",
+        "口播写了好几段，结果有几段根本没有对应画面。"
+      ],
+      "solution": "先定风格取样 → 跑专属度+本质检验 → 归技术项 → 参数化 → 验真 → 写文案排分镜。",
+      "outOfScope": "不收通用手艺；不把例外当本质；不嘲人；不写无法验真的东西。",
+      "workflow": [
+        "定风格",
+        "取样",
+        "归因",
+        "参数化",
+        "验真",
+        "写视频文案",
+        "排分镜表",
+        "写提示词"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "逆向拆解流程、吐槽边界与 8 步执行" },
+        { "path": "references/01-essence-and-workflow.md", "role": "本质、五步工作流与边界" },
+        { "path": "references/02-signal-and-attribution.md", "role": "三类信号源与归因六项" },
+        { "path": "references/03-parameters-and-verification.md", "role": "参数写法与验真方法" },
+        { "path": "references/04-style-bank.md", "role": "风格库与取样起点" },
+        { "path": "references/05-video-copywriting.md", "role": "冷面吐槽体语气与句法模板" },
+        { "path": "references/06-tutorial-visual.md", "role": "三类镜与单一变量契约" },
+        { "path": "assets/tutorial-template.md", "role": "拆解文档模板(风格卡/取样/归因/参数)" },
+        { "path": "assets/shotlist-template.md", "role": "分镜表模板(口播接画面)" },
+        { "path": "assets/prompt-template.md", "role": "生视频提示词模板(复刻/演示/对比)" }
+      ]
+    },
+    {
+      "en": "domn-film-kamen-raider",
+      "name": "假面骑士风格高保真 CG 内容创作",
+      "version": "v1.0",
+      "positioning": "假面骑士风（UE5/Warframe 高保真 CG）全链路：骑士生图→变身分镜→30s 危机变身战斗短片，带报号 call 与母题化终结。",
+      "excerptTitle": "假面骑士 · 30s 战斗分镜片段",
+      "excerptBody": "【任务】\n你是一位直接给 CG 动作组和摄影组讲戏的动作导演。\n写一条三十秒 UE5/Warframe 风格分镜提示词：\n人类形态遭遇危机 → 变身 → 战斗，最后以骑士踢终结。\n全片分三段：危机(0—6s)→变身(6—13s)→战斗(13—30s)。\n\n画风锁定（全片强制）：\nUE5 实时渲染电影级画质，写实 PBR 材质与 Nanite 超高模几何，\nLumen 全局光照与体积雾，Warframe 风格高科技生物机械装甲——\n发光能量纹路、能量护目、动态战斗姿态。\n禁止卡通描边、赛璐璐、二次元渲染、橡皮套塑料感、低多边形。",
+      "excerptCaption": "30s 战斗导演提示词的任务段与画风锁定块。",
+      "painPoints": [
+        "想做假面骑士味却出成动画风/插画风/塑料套特摄感。",
+        "骑士像既有骑士换色版，没有自己的母题和原创性。",
+        "变身首尾不像同一个人，或者战斗像摆拍缠在一起。"
+      ],
+      "solution": "先 DNA 校验定原创骑士 → 四拍+Cam1-4 排变身 → 反推母题化终结 → 30s 三段连续成片。",
+      "outOfScope": "非骑士的其他变身类型(兽化/物件化/魔法少女等)转交 henshin-director 基类。",
+      "workflow": [
+        "解析并确认需求",
+        "A 生图流（角色设计）",
+        "B 变身流（变身短片）",
+        "C 战斗流（30s 成片）",
+        "镜头专项"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "假面骑士全链路、五条硬规则与 DNA 校验" },
+        { "path": "references/design-dna-and-imagination.md", "role": "骑士设计 DNA 与想象力引擎" },
+        { "path": "references/visual-style-and-character-design.md", "role": "画风锁定块与角色提示词写法" },
+        { "path": "references/transformation-camera-blocking.md", "role": "四拍 Coverage 与 Cam1–4 摆位" },
+        { "path": "references/transformation-prompts.md", "role": "五套复刻模板(仅点名启用)" },
+        { "path": "references/henshin-finisher-ability-engine.md", "role": "变身五段链与母题化终结" },
+        { "path": "references/battle-director-30s.md", "role": "30s 导演提示词与武器设定" }
+      ]
+    },
+    {
+      "en": "domn-film-ironic-upgrade",
+      "name": "反讽升格短视频企划流程",
+      "version": "v1.0",
+      "positioning": "把廉价物用贵话术拍成买不起的样子：用对方的语言复述套路，冷面说明书语气，笑点自己长出来。",
+      "excerptTitle": "反讽升格 · 企划模板片段",
+      "excerptBody": "## 二、话语体系拆解清单（九条目，每条必须真实存在）\n条目        该体系的真实做法\n场地 / 人物 / 动作 / 道具 / 品牌名号 / 文案 / 姿态 / 空镜 / 升华\n拆不出来就写「未采」，不要编\n\n## 三、笑点零件排布\nP1 递进三段(必选)  P2 元评论(必选)  P3 谐音收口(必选)\n定调口癖(必用)  自我揭短(必用)  万能底牌(必用)\n五件招牌口癖必留，散装落在 3–4 处关键节点",
+      "excerptCaption": "企划模板的核心：真实套路清单与笑点零件排布。",
+      "painPoints": [
+        "想拍「把土东西拍高级」的梗，但笑点硬凑、不像。",
+        "拆不出对方话术的真实套路，只能用夸张代替还原。",
+        "结尾焊不死，没有一句同时含住「物」和「壳」的谐音。"
+      ],
+      "solution": "先定配方(廉价物×话语体系) → 拆真实套路 → 排笑点零件 → 写冷面文案 → 配画面 → 出七段提示词。",
+      "outOfScope": "不嘲人、不地域黑；谐音只做到「听得出」不拿去卖货；嘲话术不嘲人。",
+      "workflow": [
+        "定配方",
+        "拆套路",
+        "排零件",
+        "写文案",
+        "配画面",
+        "过自检",
+        "生成提示词"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "反讽升格本质、6 步流程与边界" },
+        { "path": "references/01-methodology.md", "role": "四个变量轴与素材矩阵" },
+        { "path": "references/02-humor-spirit.md", "role": "幽默精神七条与六种死法" },
+        { "path": "references/03-copy-style.md", "role": "两条铁律与句法模板库" },
+        { "path": "references/04-source-annotated.md", "role": "源文案全文与逐句批注" },
+        { "path": "references/05-part-library.md", "role": "笑点零件落点与组合禁忌" },
+        { "path": "references/06-visual-language.md", "role": "视觉语法与七段式写法" },
+        { "path": "references/07-essence-and-structure.md", "role": "三层继承与原创性自检" },
+        { "path": "assets/plan-template.md", "role": "视频企划模板(配方/清单/文案)" },
+        { "path": "assets/prompt-template.md", "role": "七段式生视频提示词模板" }
+      ]
+    },
+    {
+      "en": "domn-director-emotion-review",
+      "name": "情感戏导演审核",
+      "version": "v0.2.0",
+      "positioning": "审核高情绪戏（分手/决裂/克制悲情），先识别是剧本还是视频提示词，再输出对应格式的真人微动作修订稿。",
+      "excerptTitle": "情绪戏审核 · 微动作六通道片段",
+      "excerptBody": "## 步骤 3：审核微动作（六通道）\n1 眼神：聚焦、避开、延迟回看、盯住、失焦\n2 眼睑/眉：眼皮发沉、慢眨一次、眉心短暂抬起\n3 口部/下颌：话到嘴边停住、吞咽、下颌收紧后释放\n4 呼吸/声音：起声被打断、短促吸气、尾音破裂\n5 手/姿态：伸手后停住、抓紧、重心移动、脚不跟身\n6 空间/节奏：拒绝靠近、半拍延迟、台词后的沉默\n\n动作写成可拍短语：身体部位 + 动词 + 方向 + 强度 + 节拍",
+      "excerptCaption": "情感戏审核的核心：把标签换成可拍的微动作短语。",
+      "painPoints": [
+        "情感戏写得「她看起来很崩溃」，但画面根本拍不出崩溃。",
+        "分不清输入是剧本还是视频提示词，改写时把格式弄混了。",
+        "对白和动作没绑定，或者反应不是由刺激触发的。"
+      ],
+      "solution": "先识别输入类型 → 建情绪主轴 → 审核六通道微动作 → 按剧本/提示词分支输出修订。",
+      "outOfScope": "不臆造背景与心理诊断；不静默转换文本形态；不把单一动作当固定情绪。",
+      "workflow": [
+        "识别输入类型",
+        "建立情绪主轴",
+        "审核微动作",
+        "分分支输出（剧本/提示词）",
+        "应用审核规则"
+      ],
+      "fileTree": [
+        { "path": "SKILL.md", "role": "英文版审核流程（分类/主轴/微动作/分支输出）" },
+        { "path": "SKILL.cn.md", "role": "中文版审核流程说明" },
+        { "path": "references/perfect-emotion-video-prompt.md", "role": "视频提示词标准结构范例" },
+        { "path": "meta.yaml", "role": "技能元信息（版本 0.2.0 / 标签 / 摘要）" }
+      ]
+    }
+  ]
+}

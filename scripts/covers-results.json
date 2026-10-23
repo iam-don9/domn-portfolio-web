@@ -1,0 +1,90 @@
+[
+  {
+    "en": "domn-ip-visual",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-ip-visual.webp"
+  },
+  {
+    "en": "domn-character-poster",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-character-poster.webp"
+  },
+  {
+    "en": "domn-image-ipsticker-generator",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-image-ipsticker-generator.webp"
+  },
+  {
+    "en": "domn-cover",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-cover.webp"
+  },
+  {
+    "en": "domn-film-scifi-short-film",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-scifi-short-film.webp"
+  },
+  {
+    "en": "domn-film-screenplay-save-the-cat",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-screenplay-save-the-cat.webp"
+  },
+  {
+    "en": "domn-film-seedance-format",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-seedance-format.webp"
+  },
+  {
+    "en": "domn-film-character-showcase",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-character-showcase.webp"
+  },
+  {
+    "en": "domn-film-action-director",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-action-director.webp"
+  },
+  {
+    "en": "domn-film-henshin-director",
+    "ok": true,
+    "skip": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-henshin-director.webp"
+  },
+  {
+    "en": "domn-film-style-deconstruct",
+    "ok": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-style-deconstruct.webp",
+    "bytes": 597582,
+    "size": "1088x608"
+  },
+  {
+    "en": "domn-film-kamen-raider",
+    "ok": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-kamen-raider.webp",
+    "bytes": 925754,
+    "size": "1088x608"
+  },
+  {
+    "en": "domn-film-ironic-upgrade",
+    "ok": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-film-ironic-upgrade.webp",
+    "bytes": 1043536,
+    "size": "1088x608"
+  },
+  {
+    "en": "domn-director-emotion-review",
+    "ok": true,
+    "webp": "F:\\DOMN-STUDIO\\domn-web\\public\\media\\covers\\domn-director-emotion-review.webp",
+    "bytes": 423758,
+    "size": "1088x608"
+  }
+]

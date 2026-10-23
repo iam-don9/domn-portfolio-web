@@ -1,0 +1,243 @@
+.logoloop {
+  position: relative;
+
+  /* flex item 的 min-width:auto 会解析成「内容最小宽度」，而轨道是 width:max-content
+     —— 容器会被副本撑宽，updateDimensions 又拿容器宽度算副本数，形成无上限的正反馈。
+     min-width:0 关掉自动最小尺寸，容器宽度只由父级决定。 */
+  min-width: 0;
+
+  --logoloop-gap: 32px;
+  --logoloop-logoHeight: 28px;
+  --logoloop-fadeColorAuto: #ffffff;
+}
+
+/* 去除列表默认圆点 / 缩进，避免 logo 之间出现项目符号 */
+.logoloop ul,
+.logoloop__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.logoloop--vertical {
+  height: 100%;
+  display: inline-block;
+}
+
+.logoloop--scale-hover {
+  padding-top: calc(var(--logoloop-logoHeight) * 0.1);
+  padding-bottom: calc(var(--logoloop-logoHeight) * 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .logoloop {
+    --logoloop-fadeColorAuto: #0b0b0b;
+  }
+}
+
+.logoloop__track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  user-select: none;
+  position: relative;
+  z-index: 0;
+
+  /* CSS-only 无缝滚动：合成器驱动，零主线程每帧成本，不与 WebGL 舞台的 rAF 争抢 */
+  animation: logoloop-scroll var(--loop-duration, 20s) linear infinite;
+}
+
+/* 水平：平移整一个平铺周期（var 由 JS 量出相邻副本间距，含尾随 gap）即无缝 */
+@keyframes logoloop-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(-1 * var(--seq-width, 0px)), 0, 0);
+  }
+}
+
+/* 垂直：平移整一个序列高度 */
+.logoloop--vertical .logoloop__track {
+  animation-name: logoloop-scroll-v;
+}
+@keyframes logoloop-scroll-v {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, calc(-1 * var(--seq-height, 0px)), 0);
+  }
+}
+
+/* 反向（right / down）：复用同一条 keyframes，仅翻转方向 */
+.logoloop--right .logoloop__track,
+.logoloop--down .logoloop__track {
+  animation-direction: reverse;
+}
+
+/* hover 平滑刹车（取代瞬停）：进入时由组件把轨道动画 playbackRate 缓动到 0，
+   移开缓动回 1。避免 animation-play-state:paused 的瞬时冻结读成顿挫/回弹。
+   具体缓动在 LogoLoop.tsx 内以 rAF 实现。 */
+.logoloop--pause-hover .logoloop__track {
+  /* 仅作标记；不再在此瞬时暂停 */
+}
+
+/* 退化：周期为 0 时不跑动画，静态停靠起始位 */
+.logoloop--static .logoloop__track {
+  animation: none;
+}
+
+.logoloop--vertical .logoloop__track {
+  flex-direction: column;
+  height: max-content;
+  width: 100%;
+}
+
+.logoloop__list {
+  display: flex;
+  align-items: center;
+}
+
+.logoloop--vertical .logoloop__list {
+  flex-direction: column;
+}
+
+.logoloop__item {
+  flex: 0 0 auto;
+  margin-right: var(--logoloop-gap);
+  font-size: var(--logoloop-logoHeight);
+  line-height: 0;            /* 去掉行盒字高，避免 inline 子元素按 baseline 被顶下 */
+  display: flex;             /* 让渲染块（img / 自绘节点）在 item 内垂直居中 */
+  align-items: center;
+}
+
+.logoloop--vertical .logoloop__item {
+  margin-right: 0;
+  margin-bottom: var(--logoloop-gap);
+}
+
+.logoloop__item:last-child {
+  margin-right: var(--logoloop-gap);
+}
+
+.logoloop--vertical .logoloop__item:last-child {
+  margin-right: 0;
+  margin-bottom: var(--logoloop-gap);
+}
+
+.logoloop__node {
+  display: inline-flex;
+  align-items: center;
+}
+
+.logoloop__item img {
+  height: var(--logoloop-logoHeight);
+  width: auto;
+  display: block;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logoloop--scale-hover .logoloop__item {
+  overflow: visible;
+}
+
+.logoloop--scale-hover .logoloop__item:hover img,
+.logoloop--scale-hover .logoloop__item:hover .logoloop__node {
+  transform: scale(1.2);
+  transform-origin: center center;
+}
+
+.logoloop--scale-hover .logoloop__node {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logoloop__link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: opacity 0.2s ease;
+}
+
+.logoloop__link:hover {
+  opacity: 0.8;
+}
+
+.logoloop__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.logoloop--fade::before,
+.logoloop--fade::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(24px, 8%, 120px);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.logoloop--fade::before {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    var(--logoloop-fadeColor, var(--logoloop-fadeColorAuto)) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.logoloop--fade::after {
+  right: 0;
+  background: linear-gradient(
+    to left,
+    var(--logoloop-fadeColor, var(--logoloop-fadeColorAuto)) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.logoloop--vertical.logoloop--fade::before,
+.logoloop--vertical.logoloop--fade::after {
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: clamp(24px, 8%, 120px);
+}
+
+.logoloop--vertical.logoloop--fade::before {
+  top: 0;
+  bottom: auto;
+  background: linear-gradient(
+    to bottom,
+    var(--logoloop-fadeColor, var(--logoloop-fadeColorAuto)) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.logoloop--vertical.logoloop--fade::after {
+  bottom: 0;
+  top: auto;
+  background: linear-gradient(
+    to top,
+    var(--logoloop-fadeColor, var(--logoloop-fadeColorAuto)) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logoloop__track {
+    animation: none !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  .logoloop__item img,
+  .logoloop__node {
+    transition: none !important;
+  }
+}

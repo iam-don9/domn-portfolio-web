@@ -1,0 +1,27 @@
+{
+  "background": "auto",
+  "created": 1791897567,
+  "data": [
+    {
+      "url": "https://pre-signed-firefly-prod.s3-accelerate.amazonaws.com/images/3af3812b-0cd8-4203-85f3-d0f9b8fc5d2c?x-resource-length=655672&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIARDA3TX66IYNWUJ27%2F20261013%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20261013T131925Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=8b833937e6a87a749129fe7ecb035ce09da15371d98f32ce68d14b21e20ec5dd"
+    }
+  ],
+  "model": "gpt-image-2.5-flare",
+  "moderation": "auto",
+  "output_format": "png",
+  "quality": "high",
+  "size": "1024x768",
+  "usage": {
+    "input_tokens": 47,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 47
+    },
+    "output_tokens": 4819,
+    "total_tokens": 4866,
+    "output_tokens_details": {
+      "image_tokens": 4819,
+      "text_tokens": 0
+    }
+  }
+}

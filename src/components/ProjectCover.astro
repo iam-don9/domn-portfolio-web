@@ -1,0 +1,86 @@
+---
+// 项目封面：全宽 16:9 主视觉。
+// 数据来源：media 里 kind=cover 的公开图片（coverOf）；无则整块不渲染。
+import type { Project } from '../lib/projects';
+import { coverOf, mediaUrl } from '../lib/projects';
+
+interface Props {
+  project: Project;
+}
+const { project } = Astro.props;
+const cover = coverOf(project);
+---
+
+{
+  cover && (
+    <figure class="project-cover reveal">
+      <img
+        src={mediaUrl(project, cover.file)}
+        alt={cover.proves || project.data.title}
+        decoding="async"
+      />
+      {cover.proves && <figcaption>{cover.proves}</figcaption>}
+    </figure>
+  )
+}
+
+<style>
+  .project-cover {
+    margin: clamp(1.6rem, 4vh, 2.6rem) 0 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-media);
+    overflow: hidden;
+    background: var(--surface-raised);
+  }
+  .project-cover img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+  .project-cover figcaption {
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid var(--border-soft);
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    line-height: 1.5;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // 软导航后内联脚本被去重跳过，必须挂 astro:page-load 重跑。
+  function initCoverReveal() {
+    const els = document.querySelectorAll<HTMLElement>('.project-cover');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      els.forEach((el) => el.classList.add('in'));
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            (e.target as HTMLElement).classList.add('in');
+            obs.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+    );
+    els.forEach((el) => {
+      if (!el.classList.contains('in')) obs.observe(el);
+    });
+  }
+  initCoverReveal();
+  document.addEventListener('astro:page-load', initCoverReveal);
+</script>

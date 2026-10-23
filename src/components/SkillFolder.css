@@ -1,0 +1,336 @@
+/* SkillFolder · S3 自研技能：多分类文件夹 + 点开单行排开（原图比例）+ 点击弹窗 */
+
+.skill-folder {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1 1 auto;          /* 撑满 slide-inner 剩余高度，让展开层可居中铺满整屏 */
+  min-height: 0;
+  position: relative;      /* 展开层 absolute 定位基准 */
+  /* 展开态调参：卡片放大倍数（围绕文件夹中心缩放，故只向上/外扩张，不压到文件夹） */
+  --s3-scale: 1.42;
+}
+
+/* ── 三个分类文件夹并列（每列一个 Folder 实例）── */
+.skill-folder__row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--s3-col-gap, 3.5rem);
+  width: 100%;
+  min-height: 0;
+  margin: auto 0;          /* 在 skill-folder 剩余空间内垂直居中（屏头置顶） */
+  /* 文件夹整体相对居中位置下移：给展开卡片让出顶部空间，避免压到标题 */
+  translate: 0 var(--s3-folder-drop, 0px);
+}
+.skill-folder__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  /* 让点开后的文件行可溢出到相邻列之上，不被裁切 */
+  position: relative;
+  z-index: 1;
+}
+.skill-folder__col:has(.folder-root[data-open]) {
+  z-index: 5;
+}
+/* 文件夹底部说明：常驻显示（开合都显示），两行完整，含文件夹名 */
+.skill-folder__cap {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 18em;            /* 约束宽度（实测三条说明 392–489px @14px），使说明恰好折成两行 */
+  text-align: center;
+}
+.skill-folder__cap-name {
+  font-family: var(--font-cn-head);
+  font-weight: 400;           /* LogoSC 仅 400，禁止合成加粗 */
+  /* 文件夹名：放大显示（原 13px 偏小），响应式但不超标题上限 */
+  font-size: clamp(1.15rem, 1.6vw, 1.5rem);
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  color: #fff;                /* 文件夹下说明标题：白色 */
+}
+.skill-folder__cap-desc {
+  margin: 0;
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+@media (max-width: 760px) {
+  .skill-folder {
+    --s3-scale: 1;
+    --s3-lift: -70px !important;
+  }
+  .skill-folder__row {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 2.2rem;
+    margin: 0;
+    padding-top: 6.5rem;
+    translate: none;
+  }
+  .skill-folder__col {
+    flex: 0 0 auto;
+    width: min(100%, 311px);
+  }
+  .skill-folder__col--open .folder-items {
+    scale: 0.9 !important;
+    translate: 0 var(--s3-lift) !important;
+  }
+}
+
+.skill-intro {
+  margin: 0;
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: var(--measure-wide);
+}
+
+/* ── 点开文件夹：文件夹位置不变，保留 React Bits Folder 原生弹簧动效，
+      封面按 itemAspect=1088/608 弹成单/双行（>4 张自动双行、尺寸统一）；
+      卡片形状已与封面吻合，故封面以 cover 填满、无留白、不裁切 ── */
+.skill-folder .folder-photo img {
+  object-fit: cover;
+}
+
+/* ── 统一展开锚点 + 卡片放大排列、不遮盖文件夹 ──
+      做法：把卡片整体（.folder-items，引擎内新增的卡片分组层）当作一个整体，
+      打开时围绕「文件夹中心」做 scale 放大 + translate(--s3-shift) 平移到统一锚点。
+      - 围绕文件夹中心缩放 → 卡片行水平中心始终落在文件夹中心 X，放大时只向「上/外」扩张，
+        不会下压到文件夹上（不遮盖）；
+      - 文件夹图形层（ground/cast/back/front/shade）不在此分组内，故保持原大小、原地不动；
+      - 用独立 scale/translate 属性叠加在 JS 弹簧 transform 之上，过渡与弹簧同步。
+      transform-origin 取文件夹中心（CSS 变量由引擎在 .folder-root 上定义，向下继承）。 ── */
+.skill-folder__col .folder-items {
+  /* 层级：内夹(.folder-back z=4) < 卡片(本层) < 外夹(.folder-front z=40)。
+     ⚠️ position:relative 必须保留：z-index 对 static 元素不生效——本层若保持 static，
+     即使写了 z-index 也会按「transformed 元素」落入 z=0 绘制组，被内夹(z=4)压住，
+     卡片会从内页下面穿过（2026-10-21 修复）。 */
+  position: relative;
+  z-index: 20;
+  transform-origin: calc(var(--folder-w) / 2) calc((var(--folder-tab-h) + var(--folder-h)) / 2);
+  translate: 0 0;
+  scale: 1;
+  transition:
+    translate 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    scale 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.skill-folder__col--open .folder-items {
+  translate: var(--s3-shift, 0px) var(--s3-lift, 0px);
+  scale: var(--s3-scale);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skill-folder__col .folder-items {
+    transition: none;
+  }
+}
+
+/* ── 文件夹配色：磨砂透明黑（frosted translucent black）──
+      Folder.tsx 的 parseColor 会剥离 alpha（只取 RGB 三通道），所以无法靠传入 rgba 实现
+      半透明；这里沿用 glass 变体的做法，用 rgba(var(--folder-rgb), α) 注入半透明黑，
+      并叠加 backdrop-filter: blur() 实现「磨砂」质感。仅作用于 S3 区，不改动通用 Folder。 ── */
+.skill-folder__col .folder-root[data-variant='solid'] .folder-back-fill,
+.skill-folder__col .folder-root[data-variant='solid'] .folder-face-inner {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--folder-rgb), 0.5) 0%,
+      rgba(var(--folder-rgb), 0.72) 100%
+    );
+  -webkit-backdrop-filter: blur(13px) saturate(1.25);
+  backdrop-filter: blur(13px) saturate(1.25);
+}
+.skill-folder__col .folder-root[data-variant='solid'] .folder-face-outer {
+  background:
+    linear-gradient(
+      160deg,
+      rgba(var(--folder-rgb), 0.66) 0%,
+      rgba(var(--folder-rgb), 0.5) 48%,
+      rgba(var(--folder-rgb), 0.76) 100%
+    );
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  /* 替换原 solid 的白色高光内描边：保留极淡的顶部高光（玻璃边缘）+ 深色投影 */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 18px 42px rgba(0, 0, 0, 0.45);
+}
+/* 标签页文字：文件夹上不再写标题文字（底部说明已标注文件夹名）。
+   ⚠️ 只隐藏 .folder-back 里那张可见标签；量宽用的 .folder-measure 同类名但在
+   .folder-root 直下，不受影响——保留它才能维持原 tab 几何与 aria-label。 */
+.skill-folder__col .folder-back .folder-tab-text {
+  display: none;
+}
+
+/* ── 弹窗（封面 + 技能说明）── */
+.skill-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: rgba(4, 5, 6, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: skillModalIn var(--dur-base) var(--ease);
+}
+@keyframes skillModalIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.skill-modal__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  width: min(100%, 880px);
+  max-height: min(86dvh, 640px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-media);
+  overflow: hidden;
+  animation: skillPanelIn var(--dur-base) var(--ease);
+}
+@keyframes skillPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.skill-modal__close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 2;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  background: rgba(10, 12, 14, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+.skill-modal__close:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.skill-modal__cover {
+  background: var(--ink);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.skill-modal__cover img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;          /* 详情封面同样保留原图比例，不裁切 */
+  display: block;
+}
+.skill-modal__body {
+  padding: clamp(1.2rem, 2.4vw, 1.8rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.skill-modal__name {
+  font-family: var(--font-cn-head);
+  font-weight: 400; /* LogoSC 仅 400，禁止合成加粗 */
+  font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+  line-height: 1.1;
+  color: var(--text-primary);
+  margin: 0;
+  text-wrap: balance;
+}
+.skill-modal__en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+.skill-modal__desc {
+  font-size: var(--fs-small);
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.skill-modal__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0.4rem 0 0;
+}
+.skill-modal__hl {
+  margin: 0;
+  padding-left: 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.skill-modal__hl li {
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.skill-modal__hl li::marker {
+  color: var(--accent-dim);
+}
+.skill-modal__gh {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.9rem;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+.skill-modal__gh:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .skill-modal__panel {
+    grid-template-columns: 1fr;
+    max-height: 90dvh;
+  }
+  .skill-modal__cover {
+    aspect-ratio: 16 / 9;
+  }
+}

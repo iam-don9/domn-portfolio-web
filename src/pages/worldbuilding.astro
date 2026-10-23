@@ -1,0 +1,122 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TitleCard from '../components/TitleCard.astro';
+import SectionGroup from '../components/SectionGroup.astro';
+import { getProjects, coverOf, mediaUrl } from '../lib/projects';
+import { getSection } from '../lib/sections';
+import { buildSectionNav } from '../lib/sidenav';
+
+const sec = getSection('worldbuilding');
+const all = await getProjects();
+const byOrder = (a: (typeof all)[number], b: (typeof all)[number]) =>
+  (a.data.order ?? 99) - (b.data.order ?? 99);
+
+// 剧本档案馆：worldbuilding 类型，以及 crossSections 交叉链过来的剧本（进化论）
+const scripts = all
+  .filter(
+    (p) =>
+      p.data.type === 'worldbuilding' ||
+      p.data.crossSections.includes('script-archive')
+  )
+  .sort(byOrder);
+
+const statusLabel: Record<string, string> = {
+  Filmed: '已落地短片',
+  'In Development': '开发中',
+  'Lore Concept': '纯文学概念',
+};
+
+const toItems = (list: typeof scripts) =>
+  list.map((s) => {
+    const cover = coverOf(s);
+    const coverUrl = cover ? mediaUrl(s, cover.file) : null;
+    const chars = s.data.characters ?? [];
+    const isFilmed = s.data.filmStatus === 'Filmed';
+    const isCross = s.data.type !== 'worldbuilding';
+    return {
+      href: `/worldbuilding/${s.id}`,
+      coverUrl,
+      title: s.data.title,
+      titleEn: s.data.titleEn ?? '',
+      eyebrow: [s.data.genre, statusLabel[s.data.filmStatus ?? '']].filter(Boolean).join(' · '),
+      desc: s.data.statement,
+      flag: isCross ? '剧本 · 交叉收录' : isFilmed && s.data.filmId ? 'FILM' : undefined,
+      meta: chars.slice(0, 4).map((c) => c.name),
+    };
+  });
+
+// 分组：A 短剧规划 / B 短片规划 / C 电影规划
+// 未设 planKind 的交叉收录剧本（如进化论）默认归入 C 电影规划
+const planOf = (p: (typeof scripts)[number]) => p.data.planKind ?? '电影规划';
+const groupA = toItems(scripts.filter((s) => planOf(s) === '短剧规划'));
+const groupB = toItems(scripts.filter((s) => planOf(s) === '短片规划'));
+const groupC = toItems(scripts.filter((s) => planOf(s) === '电影规划'));
+
+// 常驻侧栏：板块页 → 项目种类 + 项目（与下方 SectionGroup 分组一致）
+const sectionNav = buildSectionNav([
+  {
+    label: 'A 短剧规划 · SHORT DRAMA PLANNING',
+    target: 'sec-A',
+    items: groupA.map((s) => ({ value: s.href, label: s.title })),
+  },
+  {
+    label: 'B 短片规划 · SHORT FILM PLANNING',
+    target: 'sec-B',
+    items: groupB.map((s) => ({ value: s.href, label: s.title })),
+  },
+  {
+    label: 'C 电影规划 · FEATURE FILM PLANNING',
+    target: 'sec-C',
+    items: groupC.map((s) => ({ value: s.href, label: s.title })),
+  },
+]);
+---
+
+<BaseLayout
+  title="世界观与叙事"
+  activeSection="worldbuilding"
+  sideNav={sectionNav}
+  sideNavActive={Astro.url.pathname}
+  sideNavKind="section"
+>
+  <div class="page-inner">
+
+    <TitleCard
+      num={sec.num}
+      label={sec.label}
+      labelCn={sec.labelCn}
+      title={sec.label}
+      lede={`创世设定的档案馆与剧本库（IP Bible & Script Archive）——把想象里的宇宙先立住，再让短片与商业去拍摄它。`}
+      video={sec.video}
+    />
+
+    <div class="page-body">
+      <SectionGroup
+        index="A"
+        id="sec-A"
+        label="短剧规划"
+        labelEn="SHORT DRAMA PLANNING"
+        intro="面向竖屏 / 系列化短剧的创世设定与剧本规划——高频更新的世界观，先立住再拍。"
+        items={groupA}
+      />
+
+      <SectionGroup
+        index="B"
+        id="sec-B"
+        label="短片规划"
+        labelEn="SHORT FILM PLANNING"
+        intro="单集 / 单元式短片的剧本与设定规划——在有限时长里把人物与冲突讲透。"
+        items={groupB}
+      />
+
+      <SectionGroup
+        index="C"
+        id="sec-C"
+        label="电影规划"
+        labelEn="FEATURE FILM PLANNING"
+        intro="长片级的世界观与剧本规划——架构更复杂的宇宙、族群与人物弧光。"
+        items={groupC}
+      />
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,668 @@
+---
+// SkillSlides.astro · 技能深度演示弹出层（lightbox，不离页）
+// 两种模式：
+//  - iframe 模式：skill 有 zara deck（HTML 文件）→ 弹层内嵌 iframe，deck 自带键盘/触摸/滚轮导航
+//  - stub 模式：skill 暂无 deck → 渲染「演示整理中」占位（通用卡片）
+import type { SkillMeta } from '../data/skillSlides';
+
+interface Props {
+  deckMap: Record<string, string>; // en -> deck HTML 路径（如 /slides/domn-ip-visual.html）
+  skills: SkillMeta[];             // 扁平列表，用于 stub 自动生成占位
+}
+const { deckMap, skills } = Astro.props;
+---
+
+<div class="skill-lightbox" id="skill-lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="技能演示">
+  <div class="sl-backdrop" data-close></div>
+  <div class="sl-dialog" role="document">
+    <button class="sl-close" type="button" data-close aria-label="关闭演示">✕</button>
+    <div class="sl-stage">
+      <div class="sl-iframe-wrap" id="sl-iframe-wrap"></div>
+      <button class="sl-nav sl-prev" type="button" aria-label="上一页" data-prev>‹</button>
+      <div class="sl-slide" id="sl-slide" tabindex="-1"></div>
+      <button class="sl-nav sl-next" type="button" aria-label="下一页" data-next>›</button>
+    </div>
+    <div class="sl-bar">
+      <span class="sl-counter" id="sl-counter"></span>
+      <div class="sl-dots" id="sl-dots"></div>
+      <span class="sl-hint">← → 翻页 · Esc 关闭</span>
+    </div>
+    <span class="sl-deck-hint">方向键翻页 · Esc 关闭</span>
+  </div>
+</div>
+
+<script type="application/json" id="sl-data" is:inline set:html={JSON.stringify({ deckMap, skills })}></script>
+<script>
+  const SL_DATA = JSON.parse(document.getElementById('sl-data')?.textContent || '{}');
+  const deckMap = SL_DATA.deckMap ?? {};
+  const skills = SL_DATA.skills ?? [];
+
+  /** 当前挂载的弹层控制器；软导航后由 initSkillSlides() 重新赋值。 */
+  interface SkillSlidesCtrl {
+    lb: HTMLElement;
+    open: (en: string) => void;
+    close: () => void;
+    prev: () => void;
+    next: () => void;
+    isIframe: () => boolean;
+  }
+  let SL: SkillSlidesCtrl | null = null;
+
+  // ⚠️ 必须能被软导航后的 astro:page-load 重新触发：ClientRouter 会按 script.textContent
+  //    去重跳过已执行过的内联脚本（见 architecture.md §5.1）。故此处用「命名函数 + page-load」，
+  //    并把 document / window 级委托放在模块顶层，保证只绑一次。
+  function initSkillSlides() {
+    const lb = document.getElementById('skill-lightbox') as HTMLElement;
+    if (!lb) { SL = null; return; }
+    const slideEl = document.getElementById('sl-slide') as HTMLElement;
+    const iframeWrap = document.getElementById('sl-iframe-wrap') as HTMLElement;
+    const counterEl = document.getElementById('sl-counter') as HTMLElement;
+    const dotsEl = document.getElementById('sl-dots') as HTMLElement;
+    const prevBtn = lb.querySelector('[data-prev]') as HTMLElement;
+    const nextBtn = lb.querySelector('[data-next]') as HTMLElement;
+    const dialog = lb.querySelector('.sl-dialog') as HTMLElement;
+
+    let deck: any[] = [];
+    let idx = 0;
+    let lastFocus: HTMLElement | null = null;
+    let mode = 'stub';
+
+    const ESC_MAP: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    const escapeHtml = (s: string) =>
+      String(s).replace(/[&<>"']/g, (c) => ESC_MAP[c] ?? c);
+
+    function renderSlide(s: any) {
+      switch (s.type) {
+        case 'cover':
+          return `<div class="sl-cover">
+            <p class="sl-cat">${escapeHtml(s.category)}</p>
+            <h2 class="sl-name">${escapeHtml(s.name)}</h2>
+            <code class="sl-en">${escapeHtml(s.en)}</code>
+            <p class="sl-lead">${escapeHtml(s.lead)}</p>
+            ${s.tags && s.tags.length ? `<div class="sl-tags">${s.tags.map((t: any) => `<span class="sl-tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+          </div>`;
+        case 'problem':
+          return `<div class="sl-block">
+            <p class="sl-kicker">${escapeHtml(s.kicker)}</p>
+            <h3 class="sl-h">${escapeHtml(s.title)}</h3>
+            ${s.lead ? `<p class="sl-lead">${escapeHtml(s.lead)}</p>` : ''}
+            <ul class="sl-pains">${s.pains.map((p: any) => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
+            ${s.solution ? `<p class="sl-solution"><span>解法</span>${escapeHtml(s.solution)}</p>` : ''}
+          </div>`;
+        case 'structure':
+          return `<div class="sl-block">
+            <p class="sl-kicker">${escapeHtml(s.kicker)}</p>
+            <h3 class="sl-h">${escapeHtml(s.title)}</h3>
+            ${s.lead ? `<p class="sl-lead">${escapeHtml(s.lead)}</p>` : ''}
+            ${s.groups ? `<div class="sl-groups">${s.groups
+              .map(
+                (g: any) =>
+                  `<div class="sl-group"><p class="sl-g-label">${escapeHtml(g.label)}</p><ul class="sl-g-items">${g.items
+                    .map((i: any) => `<li>${escapeHtml(i)}</li>`)
+                    .join('')}</ul></div>`
+              )
+              .join('')}</div>` : ''}
+            ${s.chain ? `<div class="sl-chain">${s.chain
+              .map((c: any, i: number) => `${i ? '<span class="sl-arrow">→</span>' : ''}<span class="sl-node">${escapeHtml(c)}</span>`)
+              .join('')}</div>` : ''}
+          </div>`;
+        case 'flow':
+          return `<div class="sl-block">
+            <p class="sl-kicker">${escapeHtml(s.kicker)}</p>
+            <h3 class="sl-h">${escapeHtml(s.title)}</h3>
+            ${s.lead ? `<p class="sl-lead">${escapeHtml(s.lead)}</p>` : ''}
+            <div class="sl-flow">${s.steps
+              .map((st: any, i: number) => `${i ? '<span class="sl-arrow">→</span>' : ''}<span class="sl-step"><b>${i + 1}</b>${escapeHtml(st)}</span>`)
+              .join('')}</div>
+          </div>`;
+        case 'principles':
+          return `<div class="sl-block">
+            <p class="sl-kicker">${escapeHtml(s.kicker)}</p>
+            <h3 class="sl-h">${escapeHtml(s.title)}</h3>
+            ${s.lead ? `<p class="sl-lead">${escapeHtml(s.lead)}</p>` : ''}
+            <ul class="sl-points">${s.points
+              .map((p: any) => `<li><b>${escapeHtml(p.t)}</b>${p.d ? `<span>${escapeHtml(p.d)}</span>` : ''}</li>`)
+              .join('')}</ul>
+          </div>`;
+        case 'output':
+          return `<div class="sl-block">
+            <p class="sl-kicker">${escapeHtml(s.kicker)}</p>
+            <h3 class="sl-h">${escapeHtml(s.title)}</h3>
+            ${s.lead ? `<p class="sl-lead">${escapeHtml(s.lead)}</p>` : ''}
+            ${s.images && s.images.length ? `<div class="sl-imgs">${s.images.map((im: any) => `<img src="${escapeHtml(im)}" alt="" loading="lazy" />`).join('')}</div>` : ''}
+            ${s.note ? `<p class="sl-note">${escapeHtml(s.note)}</p>` : ''}
+          </div>`;
+        case 'coming':
+          return `<div class="sl-block sl-coming">
+            <h3 class="sl-h">${escapeHtml(s.name)} · 深度演示在做</h3>
+            <code class="sl-en">${escapeHtml(s.en)}</code>
+            <p class="sl-lead">这个 skill 的工作流和结构拆解还没做完。卡片上的说明先看着，做好了会出现在这里。</p>
+          </div>`;
+        default:
+          return '';
+      }
+    }
+
+    function getDeck(en: string) {
+      const meta = skills.find((s: any) => s.en === en) || { en, name: en, category: '' };
+      return [
+        { type: 'cover', name: meta.name, en: meta.en, category: meta.category, lead: '深度演示还没做完，先看卡片上的介绍。', tags: [] },
+        { type: 'coming', name: meta.name, en: meta.en },
+      ];
+    }
+
+    function paint() {
+      slideEl.innerHTML = renderSlide(deck[idx]);
+      slideEl.style.animation = 'none';
+      void slideEl.offsetWidth;
+      slideEl.style.animation = '';
+      counterEl.textContent = `${String(idx + 1).padStart(2, '0')} / ${String(deck.length).padStart(2, '0')}`;
+      prevBtn.classList.toggle('is-off', idx === 0);
+      nextBtn.classList.toggle('is-off', idx === deck.length - 1);
+      [...dotsEl.children].forEach((d, i) => d.classList.toggle('is-on', i === idx));
+      slideEl.scrollTop = 0;
+      slideEl.focus();
+    }
+
+    function open(en: string) {
+      lb.classList.remove('is-iframe');
+      if (deckMap[en]) {
+        mode = 'iframe';
+        lb.classList.add('is-iframe');
+        // 先让弹层完成显示，再插 iframe——否则 deck 在隐藏态量尺寸会量错
+        lastFocus = document.activeElement as HTMLElement | null;
+        lb.classList.add('is-open');
+        lb.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        iframeWrap.innerHTML = `<iframe class="sl-iframe" src="${deckMap[en]}" title="${escapeHtml(en)} 演示" loading="eager"></iframe>`;
+        const ifr = iframeWrap.querySelector('iframe') as HTMLIFrameElement;
+        // 父层直接按 iframe 元素的真实像素尺寸驱动 deck 缩放——父层一定拿得准尺寸，无时序问题
+        const driveScale = () => {
+          const doc = ifr.contentDocument;
+          const stage = doc && doc.getElementById('deckStage');
+          if (!stage) return;
+          const w = ifr.clientWidth, h = ifr.clientHeight;
+          const f = Math.min(w / 1920, h / 1080);
+          stage.style.transformOrigin = '0 0';
+          stage.style.transform = `translate(${(w - 1920 * f) / 2}px, ${(h - 1080 * f) / 2}px) scale(${f})`;
+        };
+        ifr.addEventListener('load', () => { driveScale(); requestAnimationFrame(driveScale); });
+        requestAnimationFrame(driveScale);
+        if (typeof ResizeObserver !== 'undefined') new ResizeObserver(driveScale).observe(ifr);
+        try { ifr.contentWindow?.focus(); } catch (_) {}
+        return;
+      }
+      mode = 'stub';
+      deck = getDeck(en);
+      idx = 0;
+      dotsEl.innerHTML = deck.map(() => '<button type="button" class="sl-dot" aria-label="跳到该页"></button>').join('');
+      [...dotsEl.children].forEach((d, i) =>
+        d.addEventListener('click', () => {
+          idx = i;
+          paint();
+        })
+      );
+      lastFocus = document.activeElement as HTMLElement | null;
+      lb.classList.add('is-open');
+      lb.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      paint();
+    }
+
+    function close() {
+      if (mode === 'iframe') iframeWrap.innerHTML = '';
+      lb.classList.remove('is-open');
+      lb.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    function prev() { if (idx > 0) { idx--; paint(); } }
+    function next() { if (idx < deck.length - 1) { idx++; paint(); } }
+
+    prevBtn.addEventListener('click', prev);
+    nextBtn.addEventListener('click', next);
+    lb.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+    dialog.addEventListener('click', (e) => e.stopPropagation());
+
+    SL = { lb, open, close, prev, next, isIframe: () => mode === 'iframe' };
+  }
+
+  // ── document / window 级委托：模块脚本只执行一次，故这里只绑一次 ──
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement | null;
+    // 卡片内还有独立外链（GitHub 源码）——点在它上面时交给链接自己跳转，不弹演示层
+    if (t?.closest?.('[data-skill] a')) return;
+    const card = t?.closest?.('[data-skill]');
+    if (card) { e.preventDefault(); SL && SL.open(card.getAttribute('data-skill')!); }
+  });
+  document.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement | null;
+    // 焦点在卡片外链上时同理，回车交给浏览器原生激活
+    if (t?.closest?.('[data-skill] a')) return;
+    const card = t?.closest?.('[data-skill]');
+    if (card && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      SL && SL.open(card.getAttribute('data-skill')!);
+      return;
+    }
+    if (!SL || !SL.lb.classList.contains('is-open')) return;
+    if (SL.isIframe()) return; // 方向键由 iframe 内 deck 接管；Esc 由 deck postMessage 关闭
+    if (e.key === 'Escape') SL.close();
+    else if (e.key === 'ArrowLeft') SL.prev();
+    else if (e.key === 'ArrowRight') SL.next();
+  });
+  // iframe 内 deck 按 Esc → 通知父层关闭
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'skillSlidesClose') SL && SL.close();
+  });
+
+  initSkillSlides();
+  document.addEventListener('astro:page-load', initSkillSlides);
+</script>
+
+<style is:global>
+  /* 注意：必须 is:global —— iframe 及 stub slide 内的元素都是运行时 innerHTML 插入的，
+     不带 Astro 作用域属性，scoped 样式匹配不到它们（曾导致 iframe 恒为默认 300×150）。 */
+  .skill-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .skill-lightbox.is-open {
+    display: flex;
+  }
+  .sl-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 5, 7, 0.82);
+    backdrop-filter: blur(10px) saturate(1.04);
+    -webkit-backdrop-filter: blur(10px) saturate(1.04);
+  }
+  .sl-dialog {
+    position: relative;
+    z-index: 1;
+    /* 按 deck 的 16:9 比例自适应：宽度取 视口宽 / 视口高折算 / 最大宽 三者最小值，
+       再由 aspect-ratio 推出高度 → deck 刚好铺满弹层，无黑边、不嵌套 */
+    width: min(96vw, calc(94vh * 16 / 9), 1400px);
+    aspect-ratio: 16 / 9;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-media);
+    box-shadow: 0 30px 90px -20px rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sl-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgba(10, 12, 14, 0.6);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  }
+  .sl-close:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+  }
+  .sl-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 0.75rem 0.75rem;
+  }
+
+  /* iframe 模式：deck 自带入场/导航，隐藏 stub 相关 UI */
+  .sl-iframe-wrap {
+    display: none;
+    position: absolute;
+    inset: 0;
+  }
+  .sl-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #0a0c0e;
+    display: block;
+  }
+  .skill-lightbox.is-iframe .sl-stage {
+    padding: 0;
+    gap: 0;
+  }
+  .skill-lightbox.is-iframe .sl-iframe-wrap {
+    display: block;
+  }
+  .skill-lightbox.is-iframe .sl-slide,
+  .skill-lightbox.is-iframe .sl-nav,
+  .skill-lightbox.is-iframe .sl-bar {
+    display: none;
+  }
+  .sl-deck-hint {
+    position: absolute;
+    right: 18px;
+    bottom: 14px;
+    z-index: 4;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease);
+  }
+  .skill-lightbox.is-iframe .sl-deck-hint {
+    opacity: 1;
+  }
+
+  .sl-slide {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    padding: 0.5rem 1.5rem 1rem;
+    animation: slIn var(--dur-base) var(--ease);
+  }
+  @keyframes slIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .sl-nav {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgba(10, 12, 14, 0.6);
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  }
+  .sl-nav:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+  }
+  .sl-nav.is-off {
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  .sl-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.7rem 1.5rem 1rem;
+    border-top: 1px solid var(--border-soft);
+  }
+  .sl-counter {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+  .sl-dots {
+    display: flex;
+    gap: 0.4rem;
+    flex: 1;
+    justify-content: center;
+  }
+  .sl-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: var(--border);
+    cursor: pointer;
+    padding: 0;
+    transition: background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  }
+  .sl-dot.is-on {
+    background: var(--accent);
+    transform: scale(1.35);
+  }
+  .sl-hint {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── slide 内部排版 ── */
+  .sl-kicker {
+    margin: 0 0 0.6rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .sl-h {
+    margin: 0 0 0.9rem;
+    font-size: clamp(1.3rem, 3vw, 1.9rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .sl-lead {
+    margin: 0 0 1.1rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    max-width: 60ch;
+  }
+  .sl-block,
+  .sl-cover {
+    max-width: 64ch;
+    margin: 0 auto;
+  }
+
+  .sl-cat {
+    margin: 0 0 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .sl-name {
+    margin: 0 0 0.5rem;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .sl-en {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    display: inline-block;
+    margin-bottom: 1.2rem;
+  }
+  .sl-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .sl-tag {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 4px 11px;
+  }
+
+  .sl-pains {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .sl-pains li {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: var(--fs-small);
+  }
+  .sl-pains li::marker { color: #c98a7d; }
+  .sl-solution {
+    margin: 1.2rem 0 0;
+    padding: 0.8rem 1rem;
+    border-left: 2px solid var(--accent);
+    background: var(--surface-raised);
+    border-radius: 0 var(--radius-chip) var(--radius-chip) 0;
+    color: var(--text-primary);
+    font-size: var(--fs-small);
+    line-height: 1.6;
+  }
+  .sl-solution span {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-right: 0.6rem;
+  }
+
+  .sl-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1.2rem;
+  }
+  .sl-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-media);
+    background: var(--surface-raised);
+    padding: 0.9rem 1rem;
+  }
+  .sl-g-label {
+    margin: 0 0 0.6rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .sl-g-items {
+    margin: 0;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .sl-g-items li {
+    font-size: var(--fs-small);
+    line-height: 1.55;
+    color: var(--text-secondary);
+  }
+  .sl-chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .sl-node {
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    padding: 5px 11px;
+    border: 1px solid var(--accent-dim);
+    border-radius: var(--radius-chip);
+    color: var(--text-primary);
+    background: rgba(136, 169, 189, 0.1);
+    white-space: nowrap;
+  }
+  .sl-arrow { color: var(--text-muted); font-size: 0.9rem; }
+
+  .sl-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sl-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--fs-small);
+    padding: 7px 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    color: var(--text-primary);
+    background: var(--surface-raised);
+  }
+  .sl-step b {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 0.72rem;
+  }
+
+  .sl-points {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .sl-points li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    font-size: var(--fs-small);
+  }
+  .sl-points li b { color: var(--text-primary); font-weight: 600; }
+  .sl-points li span { color: var(--text-muted); font-size: var(--fs-small); }
+  .sl-points li::marker { color: var(--accent); }
+
+  .sl-imgs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .sl-imgs img {
+    width: 100%;
+    border-radius: var(--radius-media);
+    border: 1px solid var(--border);
+  }
+  .sl-note {
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    line-height: 1.6;
+  }
+
+  .sl-coming .sl-en {
+    margin-top: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+
+  @media (max-width: 620px) {
+    .sl-hint { display: none; }
+    .sl-dialog { width: min(96vw, calc(90vh * 16 / 9)); aspect-ratio: 16 / 9; }
+    .sl-nav { width: 36px; height: 36px; font-size: 1.2rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sl-slide { animation: none; }
+  }
+</style>

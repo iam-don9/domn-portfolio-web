@@ -1,0 +1,168 @@
+---
+// 分镜提示词：逐镜展示生视频提示词原文，默认收起
+//  - 用原生 <details>/<summary>，零 JS 即可展开
+//  - 每条 = 镜号 + 提示词原文（等宽字体、可复制）+ 可选备注
+interface PromptShot {
+  id: number;
+  text: string;
+  note?: string;
+}
+interface Props {
+  shots: PromptShot[];
+  kicker?: string;
+}
+const { shots, kicker = 'SHOT PROMPTS · 分镜提示词' } = Astro.props;
+---
+
+{
+  shots.length > 0 && (
+    <section class="block reveal">
+      <p class="label en-title">{kicker}</p>
+      <h2 class="title-type">分镜提示词</h2>
+      <p class="pa-lede">
+        逐镜的生视频提示词原文。展开即看这一镜当时是怎么写的——成品与提示词之间的落差，就是判断力的位置。
+      </p>
+
+      <div class="pa-list">
+        {shots.map((s) => (
+          <details class="pa-item">
+            <summary>
+              <span class="pa-idx">SHOT {String(s.id).padStart(2, '0')}</span>
+              <span class="pa-peek">{s.text.slice(0, 64)}{s.text.length > 64 ? '…' : ''}</span>
+              <span class="pa-caret" aria-hidden="true">+</span>
+            </summary>
+            <div class="pa-body">
+              <pre class="pa-text">{s.text}</pre>
+              {s.note && <p class="pa-note">{s.note}</p>}
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .pa-lede {
+    max-width: 52ch;
+    margin: 0.9rem 0 0;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .pa-list {
+    margin-top: clamp(1.5rem, 3.5vh, 2.2rem);
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .pa-item {
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .pa-item summary {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr 1.5rem;
+    align-items: baseline;
+    gap: 0.9rem;
+    padding: 0.95rem 0.2rem;
+    cursor: pointer;
+    list-style: none;
+    transition: background var(--dur-fast) var(--ease);
+  }
+  .pa-item summary::-webkit-details-marker { display: none; }
+  .pa-item summary:hover { background: var(--surface); }
+
+  .pa-idx {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.12em;
+    color: var(--accent);
+  }
+  .pa-peek {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+  }
+  .pa-caret {
+    justify-self: end;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--text-muted);
+    transition: transform var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+  }
+  .pa-item[open] .pa-caret { transform: rotate(45deg); color: var(--accent); }
+  .pa-item[open] .pa-peek { color: var(--text-secondary); }
+
+  .pa-body {
+    padding: 0 0.2rem 1.3rem;
+  }
+  .pa-text {
+    margin: 0;
+    padding: 1rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-chip);
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    line-height: 1.75;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
+  }
+  .pa-note {
+    margin: 0.7rem 0 0;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 760px) {
+    .pa-item summary { grid-template-columns: 4.5rem 1fr 1.2rem; gap: 0.6rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+
+<script>
+  // 软导航后本脚本被去重跳过，必须挂 astro:page-load 重跑（否则整块停在 opacity:0）。
+  function initPromptReveal() {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cards = document.querySelectorAll<HTMLElement>('.pa-list');
+    const markIn = (el: Element | null) => el?.classList.add('in');
+    if (reduceMotion) {
+      cards.forEach((el) => markIn(el.closest('.reveal')));
+    } else {
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              (e.target as HTMLElement).classList.add('in');
+              obs.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+      );
+      cards.forEach((el) => {
+        const card = el.closest('.reveal');
+        if (card && !card.classList.contains('in')) obs.observe(card);
+      });
+    }
+  }
+  initPromptReveal();
+  document.addEventListener('astro:page-load', initPromptReveal);
+</script>

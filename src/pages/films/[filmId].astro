@@ -1,0 +1,200 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FilmProcess from '../../components/FilmProcess.astro';
+import PromptAccordion from '../../components/PromptAccordion.astro';
+import WorkScreening from '../../components/WorkScreening.astro';
+import ProjectProcess from '../../components/ProjectProcess.astro';
+import { render } from 'astro:content';
+import { getProjects, getProjectById } from '../../lib/projects';
+import { buildDetailNav } from '../../lib/sidenav';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects
+    .filter((p) => p.data.type === 'ai-video' || p.data.type === 'character-design')
+    .map((p) => ({ params: { filmId: p.id }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const d = project.data;
+const all = await getProjects();
+const { Content } = await render(project);
+
+const mediaBase = `/media/${d.type}/${project.id}/`;
+// 正文 markdown 体已清空的项目不再渲染 prose 区（避免空 section）。
+const hasProse = typeof project.body === 'string' && project.body.trim().length > 0;
+const relatedScript = d.scriptId ? getProjectById(all, d.scriptId) : undefined;
+// 设了 process 字段的项目走「封面 + 主片放映 + 制作过程」新结构，其余保持旧结构。
+const isNewStructure = !!d.process;
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+// 双链：crossSections 里的区标签 → 可点路由（世界观页有独立详情页，直接指过去）
+const CROSS_LINK: Record<string, string> = {
+  'script-archive': '剧本档案馆',
+};
+const crossLinks = d.crossSections
+  .filter((t) => t in CROSS_LINK)
+  .map((t) => ({ label: CROSS_LINK[t], route: `/worldbuilding/${project.id}` }));
+
+// 是否挂了世界观页（交叉收录进剧本档案馆）→ 可在影片页跳过去看完整制作过程
+const hasWorld = d.crossSections.includes('script-archive');
+
+// 常驻侧栏：详情页 → 页内条目（锚点）。按实际渲染的区块条件生成，value = 区块 id。
+// 常驻侧栏：详情页 → 页内条目（锚点）。按实际渲染的区块条件生成，value = 区块 id。
+// 关键：仅当区块确有内容时才给条目，否则会出现「空锚点」（点击不滚动、滚动不高亮）。
+const assetClips = d.processClips.filter((c) => c.stage === '资产' || c.stage === '其他');
+const hasTimeline = d.processClips.length > 0;
+const hasPrompts = (d.promptShots?.length ?? 0) > 0;
+const detailEntries = [
+  { value: 'screening', label: '成片放映 · SCREENING' },
+  ...(isNewStructure
+    ? [{ value: 'process', label: '制作过程 · PROCESS' }]
+    : d.workKind === '成品片'
+      ? [
+          ...(hasTimeline ? [{ value: 'film-process', label: '制作时间轴 · TIMELINE' }] : []),
+          ...(hasPrompts ? [{ value: 'prompts', label: '分镜提示词 · PROMPTS' }] : []),
+        ]
+      : assetClips.length > 0
+        ? [{ value: 'film-process', label: '资产图组 · ASSETS' }]
+        : []),
+  ...(d.workKind === '成品片' && hasProse && !isNewStructure ? [{ value: 'notes', label: '创作笔记 · NOTES' }] : []),
+  ...(isNewStructure && hasWorld ? [{ value: 'world-link', label: '完整制作过程 · WORLD' }] : []),
+  ...((relatedScript || crossLinks.length > 0) && !isNewStructure ? [{ value: 'dual-link', label: '双向链接 · DUAL-LINK' }] : []),
+];
+const detailNav = buildDetailNav(detailEntries);
+---
+
+<BaseLayout
+  title={d.title}
+  description={d.statement}
+  activeSection="films"
+  sideNav={detailNav}
+  sideNavActive={Astro.url.pathname}
+  sideNavKind="detail"
+>
+  <article class="page-inner detail">
+    <header class="detail-head reveal" id="overview" data-nav-id="overview">
+      <p class="label en-title">{d.title}</p>
+      <h1 class="display-type">{d.titleEn}</h1>
+      <p class="statement">{d.statement}</p>
+      <div class="facts">
+        <span class="tag">{d.type === 'character-design' ? '角色PV' : d.workKind}</span>
+        <span class="tag">{d.category ?? '类型未标注'}</span>
+        <span class="tag">{d.year}</span>
+        {d.duration && <span class="tag">{fmt(d.duration)}</span>}
+        {d.tools.length > 0 && <span class="tag">{d.tools.join(' / ')}</span>}
+      </div>
+    </header>
+
+    {
+      isNewStructure ? (
+        <>
+          {/* 影片板块统一不在详情页放封面 */}
+          <div id="screening" data-nav-id="screening"><WorkScreening project={project} showShots={false} /></div>
+          <div id="process" data-nav-id="process"><ProjectProcess project={project} mediaBase={mediaBase} scope="all" /></div>
+          {hasWorld && (
+            <a class="film-process-link" id="world-link" data-nav-id="world-link" href={`/worldbuilding/${project.id}`}>
+              <span class="film-process-link__k">↗</span>
+              <span>查看完整制作过程 · 剧本 / 资产</span>
+            </a>
+          )}
+        </>
+      ) : d.workKind === '成品片' ? (
+        // 成品片（如 rain-alley）：保留完整过程——成片 + 制作时间轴（含分镜提示词）+ 正文
+        <>
+          <div id="screening" data-nav-id="screening"><WorkScreening project={project} /></div>
+
+          {hasTimeline && (
+            <div id="film-process" data-nav-id="film-process"><FilmProcess clips={d.processClips} mediaBase={mediaBase} /></div>
+          )}
+
+          {hasPrompts && (
+            <div id="prompts" data-nav-id="prompts"><PromptAccordion shots={d.promptShots} /></div>
+          )}
+
+          {hasProse && (
+            <section class="block prose reveal" id="notes" data-nav-id="notes">
+              <Content />
+            </section>
+          )}
+
+          {(relatedScript || crossLinks.length > 0) && (
+            <div class="duallink" id="dual-link" data-nav-id="dual-link">
+              <h3>双向链接 · DUAL-LINK</h3>
+              <div class="duallink__list">
+                {relatedScript && (
+                  <a class="duallink__item" href={`/worldbuilding/${relatedScript.id}`}>
+                    <span class="k">✎</span> 源头剧本 · {relatedScript.data.title}
+                  </a>
+                )}
+                {crossLinks.map((l) => (
+                  <a class="duallink__item" href={l!.route}>
+                    <span class="k">⇄</span> 同源收录 · {l!.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        // 练习片段 / 角色PV：仅保留成片 + 资产图组（不展示其余过程阶段、分镜表与正文）
+        <>
+          <div id="screening" data-nav-id="screening"><WorkScreening project={project} showShots={false} /></div>
+
+          <div id="film-process" data-nav-id="film-process">
+            <FilmProcess
+              clips={d.processClips.filter((c) => c.stage === '资产' || c.stage === '其他')}
+              mediaBase={mediaBase}
+            />
+          </div>
+
+          {(relatedScript || crossLinks.length > 0) && (
+            <div class="duallink" id="dual-link" data-nav-id="dual-link">
+              <h3>双向链接 · DUAL-LINK</h3>
+              <div class="duallink__list">
+                {relatedScript && (
+                  <a class="duallink__item" href={`/worldbuilding/${relatedScript.id}`}>
+                    <span class="k">✎</span> 源头剧本 · {relatedScript.data.title}
+                  </a>
+                )}
+                {crossLinks.map((l) => (
+                  <a class="duallink__item" href={l!.route}>
+                    <span class="k">⇄</span> 同源收录 · {l!.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )
+    }
+
+    <a class="btn btn-ghost back" href="/films">← 返回 AI 短片</a>
+  </article>
+</BaseLayout>
+
+<style>
+  /* 影片页 → 世界观页：查看完整制作过程 */
+  .film-process-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: clamp(1.5rem, 4vh, 2.5rem);
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-media);
+    background: var(--surface);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: border-color var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
+  }
+  .film-process-link:hover {
+    border-color: var(--accent);
+    transform: translateX(4px);
+  }
+  .film-process-link__k {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+  }
+</style>

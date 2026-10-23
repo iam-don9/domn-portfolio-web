@@ -1,0 +1,110 @@
+/* S6 右栏 · 单张 3:4 翻面卡（hover 翻面） */
+.pfc-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pfc-card {
+  width: 100%;
+  height: 100%;
+}
+
+/* 正反面底：填满 TiltedCard 的 face，自带实底，避免翻面时透出另一面 */
+.pfc-face {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.15rem, 2.6vh, 1.9rem);
+  overflow: hidden;
+}
+
+/* ── 正面：工程优势封面 ── */
+.pfc-front {
+  justify-content: space-between;
+  background:
+    radial-gradient(130% 90% at 82% -8%, rgba(0, 106, 96, 0.34), transparent 58%),
+    linear-gradient(158deg, #101715 0%, #070a0a 72%);
+  color: var(--text-primary);
+}
+.pfc-eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+.pfc-headline {
+  margin: .7rem 0 0;
+  font-family: var(--font-cn-head);
+  font-weight: 400;
+  font-size: clamp(1.25rem, 2.4vh, 1.95rem);
+  line-height: 1.22;
+  letter-spacing: 0;
+  color: var(--text-primary);
+}
+.pfc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: clamp(.9rem, 2.4vh, 1.6rem) 0;
+}
+.pfc-tag {
+  font-family: var(--font-cn-head);
+  font-weight: 400;
+  font-size: clamp(.85rem, 1.7vh, 1.08rem);
+  padding: .32em .9em;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: rgba(0, 106, 96, 0.10);
+}
+.pfc-hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+/* ── 背面：4 组疑虑/回复 ── */
+.pfc-back {
+  background:
+    radial-gradient(120% 80% at 18% 0%, rgba(0, 106, 96, 0.22), transparent 55%),
+    linear-gradient(160deg, #0d1211 0%, #050807 78%);
+  color: var(--text-primary);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.pfc-back::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.pfc-back-eyebrow {
+  margin: 0 0 clamp(.7rem, 1.8vh, 1.1rem);
+  font-family: var(--font-cn-head);
+  font-weight: 400;
+  font-size: clamp(1.02rem, 2vh, 1.35rem);
+  line-height: 1.25;
+  color: var(--accent-strong);
+}
+.pfc-qa-list { display: flex; flex-direction: column; gap: clamp(.6rem, 1.5vh, .95rem); }
+.pfc-qa { margin: 0; }
+.pfc-q {
+  margin: 0 0 .28rem;
+  font-size: .78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.pfc-k {
+  color: var(--accent-strong);
+  font-family: var(--font-cn-head);
+  font-weight: 400;
+}
+.pfc-a {
+  margin: 0;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}

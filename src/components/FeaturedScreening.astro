@@ -1,0 +1,594 @@
+---
+/*
+ * S2 · 精选作品 · 放映厅（Cinema Hall）
+ * 中央主窗口 = 播放窗口；左右为上一部 / 下一部影片封面；点击左右挑选。
+ * 待机态显示项目封面，点击封面或「播放」才开始播放；播放中隐藏字幕，
+ * 暂停（本地 video）恢复字幕并显示「继续播放」。字幕区提供「查看影片详情」入口。
+ *
+ * 设计约束（勿破坏）：
+ *  - .cine-main__frame 必须保留 clip-path: inset(0 round 12px)，否则 B 站 iframe 合成层
+ *    会越过父级 overflow 在播放器上方露出一条白底。
+ *  - 脚本动态创建的媒体元素没有 Astro scoped 的 data-astro-cid 属性，
+ *    其样式必须写进 :global()（见 .cine-main__frame :global(.cine-main__media)），
+ *    否则 iframe 掉回默认 300×150 缩在左上角（10-21 事故）。
+ *  - 切换用「双向交叉淡入 + 位移」动效；旧媒体在 transitionend 后移除，并有安全超时兜底。
+ */
+interface FeaturedItem {
+  title: string;
+  subtitle: string;
+  poster: string;    // 待机封面
+  video: string;     // 本地真实视频地址；空串 = 无
+  embed?: string;    // B 站嵌入地址（player.bilibili.com）；优先于 video
+  href?: string;     // 影片详情页地址（如 /films/<id>）
+}
+interface Props {
+  items: FeaturedItem[];
+}
+const { items } = Astro.props;
+const pad = (v: number) => String(v).padStart(2, '0');
+---
+
+<div class="cinema" data-cinema data-items={JSON.stringify(items)}>
+  <div class="cine-rail cine-rail--top">
+    <span class="cine-count" aria-hidden="true"><b data-cur>01</b> / {pad(items.length)}</span>
+    <div class="cine-ticks" role="presentation">
+      {items.map((_, i) => <span class="cine-tick" data-tick={i}></span>)}
+    </div>
+  </div>
+
+  <div class="cine-stage">
+    <button class="cine-side cine-prev" type="button" data-step="-1" aria-label="上一部">
+      <span class="cine-side__frame">
+        <img class="cine-side__img" data-prev-img alt="" draggable="false" loading="lazy" />
+        <span class="cine-side__tag" aria-hidden="true">PREV</span>
+        <span class="cine-side__title" data-prev-title></span>
+      </span>
+    </button>
+
+    <div class="cine-main" data-main>
+      <div class="cine-main__frame is-idle" data-frame>
+        <!-- 待机封面：静态节点，吃 scoped 样式；播放时淡出 -->
+        <img class="cine-poster" data-poster alt="" draggable="false" />
+        <!-- 播放窗口内容由脚本按当前影片渲染（媒体栈） -->
+        <span class="cine-scrim" aria-hidden="true"></span>
+        <span class="cine-glow" aria-hidden="true"></span>
+        <span class="cine-cap">
+          <span class="cine-sub" data-main-sub></span>
+          <span class="cine-title" data-main-title></span>
+          <span class="cine-actions">
+            <button class="cine-pill cine-pill--play" type="button" data-play>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"/></svg>
+              <span data-play-label>播放</span>
+            </button>
+            <a class="cine-pill" data-detail href="#">
+              <span>查看影片详情</span>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9l6-6M4.5 3H9v4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <button class="cine-side cine-next" type="button" data-step="1" aria-label="下一部">
+      <span class="cine-side__frame">
+        <img class="cine-side__img" data-next-img alt="" draggable="false" loading="lazy" />
+        <span class="cine-side__tag" aria-hidden="true">NEXT</span>
+        <span class="cine-side__title" data-next-title></span>
+      </span>
+    </button>
+  </div>
+
+  <div class="cine-rail cine-rail--bottom">
+    <button class="cine-arrow cine-arrow--prev" type="button" data-step="-1" aria-label="上一部">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <span class="cine-dot" aria-hidden="true">●</span>
+    <button class="cine-arrow cine-arrow--next" type="button" data-step="1" aria-label="下一部">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<style>
+  .cinema {
+    /* 建立容器上下文：内部尺寸改用 cqw（相对本组件宽度），
+       放进任何容器都按容器宽度缩放，且自身在父级中水平居中。 */
+    container-type: inline-size;
+    width: 100%;
+    max-width: 100%;   /* 限宽交给父容器（如首页 --content-max），组件本身不额外封顶 */
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.9rem, 2.4vh, 1.7rem);
+    pointer-events: auto;
+  }
+
+  /* ── 顶部：计数器 + 进度刻度 ── */
+  .cine-rail--top {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .cine-count {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .cine-count b { color: #fff; font-weight: 400; }
+  .cine-ticks { display: flex; gap: 0.4rem; }
+  .cine-tick {
+    width: 1.7rem; height: 2px;
+    background: rgba(255, 255, 255, 0.26);
+    border-radius: 2px;
+    transition: background 0.45s var(--ease), transform 0.45s var(--ease), width 0.45s var(--ease);
+  }
+  .cine-tick.on {
+    background: var(--accent-strong);
+    width: 2.6rem;
+    transform: translateY(-0.5px);
+  }
+
+  /* ── 舞台：左封面 | 主窗口 | 右封面（主窗口为绝对视觉中心）── */
+  .cine-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.5rem, 1.8cqw, 2rem);
+    width: 100%;
+  }
+
+  /* 左右封面（上一部 / 下一部）—— 主动后退，衬托中央主窗 */
+  .cine-side {
+    flex: 0 0 auto;
+    width: clamp(4.5rem, 13cqw, 10rem);
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #000;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.5;
+    transform: scale(0.94);
+    filter: grayscale(0.25) brightness(0.82);
+    transition: opacity 0.4s var(--ease), transform 0.4s var(--ease),
+                border-color 0.4s var(--ease), filter 0.4s var(--ease);
+  }
+  .cine-side:hover,
+  .cine-side:focus-visible {
+    opacity: 1;
+    transform: scale(1);
+    border-color: var(--accent);
+    filter: none;
+    outline: none;
+  }
+  .cine-side__frame { position: relative; display: block; width: 100%; height: 100%; }
+  .cine-side__img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    filter: saturate(0.95) contrast(1.03);
+  }
+  .cine-side__tag {
+    position: absolute;
+    top: 0.45rem; left: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--accent-strong);
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+  }
+  .cine-side__title {
+    position: absolute;
+    left: 0.5rem; right: 0.5rem; bottom: 0.4rem;
+    font-family: var(--font-cn-head);
+    font-weight: 400;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 主播放窗口 —— 页面焦点 */
+  .cine-main {
+    flex: 0 1 auto;
+    /* 宽取容器 64%，同时受视口高度约束（16:9 反推），大屏随高度放大、矮屏不撑爆 */
+    width: min(64cqw, calc(55dvh * 16 / 9));
+    aspect-ratio: 16 / 9;
+  }
+  .cine-main__frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: #000;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+    /* 跨域 iframe（B 站）的合成层会越过父级 overflow，在播放器上方露出一条白底；
+       clip-path 才会真正裁掉该合成层（contain:paint 不够）。 */
+    clip-path: inset(0 round 14px);
+    contain: paint;
+    isolation: isolate;
+    cursor: pointer; /* 待机：整幅封面可点击播放 */
+  }
+  .cine-main__frame.is-playing { cursor: default; }
+  .cine-main__frame.is-paused { cursor: pointer; }
+
+  /* 待机封面：铺满全窗，播放时淡出 */
+  .cine-poster {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 1;
+    user-select: none;
+    -webkit-user-drag: none;
+    transition: opacity 0.5s var(--ease), transform 0.8s var(--ease);
+  }
+  .cine-main__frame.is-playing .cine-poster {
+    opacity: 0;
+    transform: scale(1.04);
+    pointer-events: none;
+  }
+
+  /* 压暗 + 青绿内辉光 */
+  .cine-scrim {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 52%;
+    z-index: 3;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.82));
+    pointer-events: none;
+  }
+  .cine-glow {
+    position: absolute; inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: inset 0 0 36px 6px rgba(0, 106, 96, 0.22);
+    opacity: 0.9;
+    transition: opacity 0.6s var(--ease);
+  }
+
+  /* 字幕区：待机显示，播放中隐藏，暂停恢复 */
+  .cine-cap {
+    position: absolute; left: 1.3rem; right: 1.3rem; bottom: 1.1rem;
+    z-index: 4;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem;
+    pointer-events: none;
+    transition: opacity 0.42s var(--ease), transform 0.42s var(--ease);
+  }
+  .cine-cap.cap-swap { opacity: 0; transform: translateY(10px); }
+  .cine-main__frame.is-playing:not(.is-paused) .cine-cap {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  .cine-sub {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+  }
+  .cine-sub::before {
+    content: "";
+    width: 0.5rem; height: 0.5rem; border-radius: 999px;
+    background: var(--accent-strong);
+    box-shadow: 0 0 10px var(--accent-strong);
+  }
+  .cine-title {
+    font-family: var(--font-cn-head);
+    font-weight: 400;
+    font-size: clamp(1.25rem, 4cqw, 2rem);
+    line-height: 1.08;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  }
+
+  /* 动作行：播放 / 查看影片详情 */
+  .cine-actions {
+    display: flex; align-items: center; gap: 0.55rem;
+    margin-top: 0.2rem;
+  }
+  .cine-pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    color: #fff;
+    text-decoration: none;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    border-radius: 999px;
+    padding: 0.34rem 0.85rem;
+    pointer-events: auto;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background 0.25s var(--ease), border-color 0.25s var(--ease),
+                color 0.25s var(--ease), transform 0.25s var(--ease);
+  }
+  .cine-pill svg { width: 0.65rem; height: 0.65rem; }
+  .cine-pill:hover,
+  .cine-pill:focus-visible {
+    background: rgba(0, 106, 96, 0.42);
+    border-color: var(--accent-strong);
+    color: #fff;
+    transform: translateY(-1px);
+    outline: none;
+  }
+  .cine-pill--play { border-color: var(--accent-strong); color: var(--accent-strong); }
+  .cine-pill--play:hover { color: #fff; }
+
+  /* ── 底部：左右箭头 + 中点 ── */
+  .cine-rail--bottom { display: flex; align-items: center; gap: 0.7rem; }
+  .cine-dot { color: var(--accent-strong); font-size: 0.5rem; opacity: 0.8; }
+  .cine-arrow {
+    width: 2.7rem; height: 2.7rem;
+    display: grid; place-items: center;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    border-radius: 999px;
+    cursor: pointer;
+    opacity: 0.72;
+    transition: opacity 0.25s var(--ease), background 0.25s var(--ease),
+                border-color 0.25s var(--ease), transform 0.25s var(--ease);
+  }
+  .cine-arrow:hover,
+  .cine-arrow:focus-visible {
+    opacity: 1; background: rgba(0, 106, 96, 0.28); border-color: var(--accent-strong);
+    transform: scale(1.06); outline: none;
+  }
+  .cine-arrow:active { transform: scale(0.96); }
+  .cine-arrow svg { width: 1.35rem; height: 1.35rem; }
+
+  /* ── 动态创建的媒体：必须 :global()（无 data-astro-cid，scoped 样式命中不了）── */
+  .cine-main__frame :global(.cine-main__media) {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+    z-index: 1;
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.6s var(--ease), transform 0.72s var(--ease);
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+  }
+  .cine-main__frame :global(.cine-main__media.is-from-right) { opacity: 0; transform: translateX(6%) scale(1.06); }
+  .cine-main__frame :global(.cine-main__media.is-from-left)  { opacity: 0; transform: translateX(-6%) scale(1.06); }
+  .cine-main__frame :global(.cine-main__media.is-leaving-right) { opacity: 0; transform: translateX(-6%) scale(0.97); }
+  .cine-main__frame :global(.cine-main__media.is-leaving-left)  { opacity: 0; transform: translateX(6%) scale(0.97); }
+  .cine-main__frame :global(.cine-main__media.video) { background: #000; }
+  .cine-main__frame :global(.cine-main__media.embed) { border: 0; background: #000; }
+
+  /* 容器级自适应：组件被放进任意宽度的容器（不限视口）都会按容器宽度
+     缩放并居中；窄容器下隐藏左右封面，主窗占满剩余宽度。
+     用 @container 而非 @media 视口查询 —— 这才是「在不同页面都能自适应」。 */
+  @container (max-width: 34rem) {
+    .cine-side { display: none; }
+    .cine-main { width: min(92cqw, 28rem); }
+    .cine-title { font-size: clamp(1.1rem, 6cqw, 1.5rem); }
+  }
+  @container (max-width: 22rem) {
+    .cine-cap { left: 0.8rem; right: 0.8rem; bottom: 0.8rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cine-side, .cine-arrow, .cine-tick, .cine-main,
+    .cine-cap, .cine-glow, .cine-poster, .cine-pill {
+      transition: none !important;
+    }
+    .cine-main__frame :global(.cine-main__media) { transition: none !important; }
+  }
+</style>
+
+<script>
+  function initCinema(root: HTMLElement) {
+    const raw = root.getAttribute('data-items');
+    if (!raw) return;
+    let items: { title: string; subtitle: string; poster: string; video: string; embed?: string; href?: string }[];
+    try {
+      items = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const n = items.length;
+    if (n < 2) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cur = root.querySelector<HTMLElement>('[data-cur]');
+    const ticks = Array.from(root.querySelectorAll<HTMLElement>('.cine-tick'));
+    const prevImg = root.querySelector<HTMLImageElement>('[data-prev-img]');
+    const nextImg = root.querySelector<HTMLImageElement>('[data-next-img]');
+    const prevTitle = root.querySelector<HTMLElement>('[data-prev-title]');
+    const nextTitle = root.querySelector<HTMLElement>('[data-next-title]');
+    const mainTitle = root.querySelector<HTMLElement>('[data-main-title]');
+    const mainSub = root.querySelector<HTMLElement>('[data-main-sub]');
+    const frame = root.querySelector<HTMLElement>('[data-frame]');
+    const poster = root.querySelector<HTMLImageElement>('[data-poster]');
+    const cap = root.querySelector<HTMLElement>('.cine-cap');
+    const playLabel = root.querySelector<HTMLElement>('[data-play-label]');
+    const detailLink = root.querySelector<HTMLAnchorElement>('[data-detail]');
+    const pad = (v: number) => String(v).padStart(2, '0');
+
+    let idx = 0;
+    let activeMedia: HTMLElement | null = null;
+    let lastDir = 0; // 0 = 首次（无动效），>0 下一部，<0 上一部
+
+    /* 媒体工厂：embed / video 仅在用户点击播放时才创建并起播 */
+    function buildPlayable(it: { title: string; video: string; embed?: string }): HTMLElement | null {
+      if (it.embed) {
+        const f = document.createElement('iframe');
+        f.className = 'cine-main__media embed';
+        // 用户点击触发起播：带 autoplay；被浏览器策略拦截时 B 站播放器自带播放键可点
+        const sep = it.embed.includes('?') ? '&' : '?';
+        f.src = `${it.embed}${sep}autoplay=1`;
+        f.setAttribute('allowfullscreen', '');
+        f.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
+        f.setAttribute('scrolling', 'no');
+        f.setAttribute('frameborder', '0');
+        f.setAttribute('title', it.title);
+        return f;
+      }
+      if (it.video) {
+        const v = document.createElement('video');
+        v.className = 'cine-main__media video';
+        v.src = it.video;
+        v.muted = false; v.loop = true; v.playsInline = true; v.preload = 'auto';
+        v.play?.().catch(() => { v.muted = true; v.play?.().catch(() => {}); });
+        return v;
+      }
+      return null; // 只有封面的条目：保持待机
+    }
+
+    // 双向交叉淡入 + 位移挂载；旧媒体在结束后移除（安全超时兜底）
+    function mountMedia(media: HTMLElement) {
+      if (!frame) return;
+      const dir = lastDir;
+      if (dir > 0) media.classList.add('is-from-right');
+      else if (dir < 0) media.classList.add('is-from-left');
+
+      frame.appendChild(media);
+
+      if (dir !== 0 && !reduceMotion) {
+        void media.offsetWidth; // 强制 reflow，确保起始态生效
+        requestAnimationFrame(() => media.classList.remove('is-from-right', 'is-from-left'));
+      } else {
+        media.classList.remove('is-from-right', 'is-from-left');
+      }
+
+      const old = activeMedia;
+      if (old && old !== media) {
+        if (dir > 0) old.classList.add('is-leaving-left');
+        else if (dir < 0) old.classList.add('is-leaving-right');
+        else { old.classList.add('is-leaving-left'); }
+        if (reduceMotion) {
+          old.remove();
+        } else {
+          const cleanup = () => old.remove();
+          old.addEventListener('transitionend', cleanup, { once: true });
+          window.setTimeout(cleanup, 1000);
+        }
+      }
+      activeMedia = media;
+    }
+
+    function stopPlayback() {
+      if (activeMedia) {
+        const v = activeMedia as HTMLVideoElement;
+        if (v.tagName === 'VIDEO') v.pause();
+        activeMedia.remove();
+        activeMedia = null;
+      }
+      frame?.classList.remove('is-playing', 'is-paused');
+      if (playLabel) playLabel.textContent = '播放';
+    }
+
+    function startPlayback() {
+      const it = items[idx];
+      const media = buildPlayable(it);
+      if (!media || !frame) return;
+      mountMedia(media);
+      frame.classList.add('is-playing');
+      frame.classList.remove('is-paused');
+    }
+
+    function renderMain() {
+      const it = items[idx];
+      // 待机态：卸掉旧媒体，回到封面
+      if (activeMedia) {
+        activeMedia.remove();
+        activeMedia = null;
+      }
+      frame?.classList.remove('is-playing', 'is-paused');
+      if (poster) {
+        poster.src = it.poster;
+        poster.alt = it.title;
+      }
+      if (mainTitle) mainTitle.textContent = it.title;
+      if (mainSub) mainSub.textContent = it.subtitle;
+      if (detailLink) {
+        if (it.href) { detailLink.href = it.href; detailLink.hidden = false; }
+        else detailLink.hidden = true;
+      }
+      if (playLabel) playLabel.textContent = '播放';
+    }
+
+    function render() {
+      const prev = items[(idx - 1 + n) % n];
+      const next = items[(idx + 1) % n];
+      if (prevImg) { prevImg.src = prev.poster; prevImg.alt = prev.title; }
+      if (nextImg) { nextImg.src = next.poster; nextImg.alt = next.title; }
+      if (prevTitle) prevTitle.textContent = prev.title;
+      if (nextTitle) nextTitle.textContent = next.title;
+      if (cur) cur.textContent = pad(idx + 1);
+      ticks.forEach((t, i) => t.classList.toggle('on', i === idx));
+      // 字幕淡出 → 更新 → 淡入
+      if (cap && lastDir !== 0 && !reduceMotion) {
+        cap.classList.add('cap-swap');
+        window.setTimeout(() => {
+          renderMain();
+          requestAnimationFrame(() => cap.classList.remove('cap-swap'));
+        }, 170);
+      } else {
+        renderMain();
+      }
+    }
+
+    function step(dir: number) {
+      idx = (idx + dir + n) % n;
+      lastDir = dir;
+      render();
+    }
+
+    root.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const d = Number(btn.getAttribute('data-step'));
+        if (!Number.isNaN(d)) step(d);
+      });
+    });
+
+    // 播放按钮
+    root.querySelector('[data-play]')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startPlayback();
+    });
+
+    // 点击主窗：待机 → 播放；本地 video 播放中 → 暂停/继续
+    frame?.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('a, button')) return; // 胶囊/详情链接自己处理
+      if (frame.classList.contains('is-playing') && activeMedia && activeMedia.tagName === 'VIDEO') {
+        const v = activeMedia as HTMLVideoElement;
+        if (v.paused) {
+          v.play?.().catch(() => {});
+          frame.classList.remove('is-paused');
+        } else {
+          v.pause();
+          frame.classList.add('is-paused');
+          if (playLabel) playLabel.textContent = '继续播放';
+        }
+      } else if (!frame.classList.contains('is-playing')) {
+        startPlayback();
+      }
+    });
+
+    render();
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-cinema]').forEach(initCinema);
+</script>

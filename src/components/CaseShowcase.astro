@@ -1,0 +1,303 @@
+---
+// 创意作品展示（替代死板网格）：杂志式大图交替排布
+//  - 每条作品 = 大序号 + 16:9 封面 + 大标题 + 导语，左右交替形成编辑节奏
+//  - 视频本体全部走 B 站外链，列表页只放封面静帧，悬停仅做图片微缩放
+//  - 滚动进入视口时淡入上浮（尊重 reduced-motion）
+interface Item {
+  href: string;
+  coverUrl?: string | null;
+  title: string;
+  titleEn: string;
+  eyebrow: string;          // 单行小标（mono / accent）
+  logline: string;
+  meta?: string[];
+  flag?: string;            // 角标，如 "成品片" / "过程片段" / "TVC"
+}
+interface Props {
+  items: Item[];
+  kicker?: string;          // 顶部小标，如 "SELECTED WORKS"
+  caption?: string;         // 顶部右对齐一句说明
+}
+const { items, kicker = 'SELECTED WORKS', caption } = Astro.props;
+---
+
+<section class="showcase">
+  <header class="showcase-head">
+    <p class="sc-kicker">{kicker}</p>
+    {caption && <p class="sc-caption">{caption}</p>}
+  </header>
+
+  <div class="features">
+    {
+      items.map((it, i) => (
+        <a class="feature reveal" href={it.href} data-i={i}>
+          <span class="f-index" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <div class="f-media">
+            <div class="f-media-inner">
+              {it.coverUrl ? (
+                <img src={it.coverUrl} alt={it.title} loading="lazy" />
+              ) : (
+                <div class="f-ph"><span>{it.titleEn}</span></div>
+              )}
+              {it.flag && <span class="f-flag">{it.flag}</span>}
+            </div>
+          </div>
+          <div class="f-text">
+            <p class="f-eyebrow">{it.eyebrow}</p>
+            <h3 class="f-title">{it.title}</h3>
+            <p class="f-title-en">{it.titleEn}</p>
+            <p class="f-logline">{it.logline}</p>
+            {it.meta && it.meta.length > 0 && (
+              <ul class="f-meta">
+                {it.meta.map((m) => <li>{m}</li>)}
+              </ul>
+            )}
+            <span class="f-cta">VIEW PROJECT <span class="ar">→</span></span>
+          </div>
+        </a>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .showcase {
+    margin-top: clamp(2.5rem, 6vh, 5rem);
+  }
+
+  /* 顶部编辑式小标（替代统计仪表盘） */
+  .showcase-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-bottom: clamp(1.25rem, 3vh, 2rem);
+    border-bottom: 1px solid var(--border-soft);
+    margin-bottom: clamp(2.5rem, 6vh, 5rem);
+  }
+  .sc-kicker {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .sc-caption {
+    margin: 0;
+    max-width: 34ch;
+    text-align: right;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3.5rem, 9vh, 8rem);
+  }
+
+  .feature {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    text-decoration: none;
+    color: inherit;
+  }
+  /* 左右交替：偶数条目媒体在右，奇数在左 */
+  .feature:nth-child(even) .f-media { order: 2; }
+  .feature:nth-child(even) .f-text { order: 1; }
+
+  /* 大序号水印 */
+  .f-index {
+    position: absolute;
+    top: clamp(-2.4rem, -5vh, -1.2rem);
+    left: -0.1em;
+    font-family: var(--font-decor);
+    font-size: clamp(4.5rem, 12vw, 11rem);
+    line-height: 0.8;
+    font-weight: 600;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--border);
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+  .feature:nth-child(even) .f-index { left: auto; right: -0.1em; }
+
+  .f-media {
+    position: relative;
+    z-index: 1;
+  }
+  .f-media-inner {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-media);
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+  }
+  .f-media-inner img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--dur-slow) var(--ease), filter var(--dur-base) var(--ease);
+  }
+  .feature:hover .f-media-inner img {
+    transform: scale(1.045);
+    filter: brightness(1.06);
+  }
+  .f-ph {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--surface-raised), var(--surface));
+  }
+  .f-ph span {
+    font-family: var(--font-decor);
+    font-size: clamp(1.4rem, 3vw, 2.4rem);
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+  .f-flag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+  }
+
+  .f-text {
+    position: relative;
+    z-index: 1;
+  }
+  .f-eyebrow {
+    margin: 0 0 0.9rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .f-title {
+    margin: 0;
+    font-size: var(--fs-display);
+    line-height: 1.04;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .f-title-en {
+    margin: 0.4rem 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+  .f-logline {
+    margin: 1.1rem 0 0;
+    max-width: 42ch;
+    color: var(--text-secondary);
+    line-height: 1.65;
+  }
+  .f-meta {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.2rem 0 0;
+    padding: 0;
+  }
+  .f-meta li {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-chip);
+    padding: 4px 9px;
+  }
+  .f-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-top: 1.6rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+  }
+  .f-cta .ar {
+    display: inline-block;
+    transition: transform var(--dur-base) var(--ease);
+  }
+  .feature:hover .f-cta { color: var(--accent-strong); }
+  .feature:hover .f-cta .ar { transform: translateX(6px); }
+
+  /* 滚动浮现 */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* 移动端：堆叠，媒体在上 */
+  @media (max-width: 760px) {
+    .feature {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    .feature:nth-child(even) .f-media,
+    .feature:nth-child(even) .f-text { order: initial; }
+    .feature .f-media { order: -1; }
+    .f-index { font-size: clamp(3.5rem, 22vw, 6rem); top: -1.4rem; }
+    .sc-caption { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .feature:hover .f-media-inner img { transform: none; }
+  }
+</style>
+
+<script>
+  // ClientRouter 软导航会按 script.textContent 去重跳过本脚本，
+  // 必须挂 astro:page-load 重跑，否则新页面的 .reveal 永远停在 opacity:0。
+  function initShowcaseReveal() {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduceMotion) {
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              (e.target as HTMLElement).classList.add('in');
+              obs.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
+      );
+      document.querySelectorAll<HTMLElement>('.showcase .reveal:not(.in)').forEach((el) => obs.observe(el));
+    } else {
+      document.querySelectorAll<HTMLElement>('.showcase .reveal').forEach((el) => el.classList.add('in'));
+    }
+  }
+  initShowcaseReveal();
+  document.addEventListener('astro:page-load', initShowcaseReveal);
+</script>

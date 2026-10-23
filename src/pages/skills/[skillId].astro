@@ -1,0 +1,103 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { render } from 'astro:content';
+import { getProjects, sectionRouteForType } from '../../lib/projects';
+import { buildDetailNav } from '../../lib/sidenav';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects
+    .filter((p) => ['skills', 'ai-tools'].includes(p.data.type))
+    .map((p) => ({ params: { skillId: p.id }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const d = project.data;
+const all = await getProjects();
+const { Content } = await render(project);
+
+// 反向索引：哪些项目声明使用了本技能
+const backlinks = all.filter((p) => (p.data.skillIds ?? []).includes(project.id));
+const ap = d.applied;
+
+// 常驻侧栏：详情页 → 页内条目（锚点）。value = 区块 id。
+// 仅当正文确有内容时才给「方法详述」条目，避免空锚点（dual-link 区块常驻，故始终保留）。
+const hasProse = typeof project.body === 'string' && project.body.trim().length > 0;
+const detailNav = buildDetailNav([
+  { value: 'workflow', label: '架构级工作流 · WORKFLOW' },
+  ...(hasProse ? [{ value: 'notes', label: '方法详述 · NOTES' }] : []),
+  { value: 'dual-link', label: '落地案例 · DUAL-LINK' },
+]);
+---
+
+<BaseLayout
+  title={d.title}
+  description={d.statement}
+  activeSection="skills"
+  sideNav={detailNav}
+  sideNavActive={Astro.url.pathname}
+  sideNavKind="detail"
+>
+  <article class="page-inner detail">
+    <header class="detail-head reveal" id="overview" data-nav-id="overview">
+      <p class="label en-title">{d.title}</p>
+      <h1 class="display-type">{d.titleEn}</h1>
+      <p class="statement">{d.statement}</p>
+      <div class="facts">
+        {d.proficiency && <span class="tag" style="color:var(--accent);border-color:var(--accent)">熟练度 · {d.proficiency}</span>}
+        <span class="tag">{d.year}</span>
+        <span class="tag">{d.tools.join(' / ')}</span>
+      </div>
+    </header>
+
+    <section class="block reveal" id="workflow" data-nav-id="workflow">
+      <p class="label en-title">WORKFLOW GRAPH</p>
+      <h2 class="title-type">架构级工作流图解</h2>
+      <div class="wf-graph">
+        <div class="wf-node wf-in">输入 · 角色设定 / 参考图</div>
+        <div class="wf-arrow">↓</div>
+        <div class="wf-node wf-proc">处理 · {d.tools.join(' / ')}</div>
+        <div class="wf-arrow">↓</div>
+        <div class="wf-node wf-out">输出 · 一致性资产 / 成片素材</div>
+      </div>
+    </section>
+
+    {hasProse && (
+      <section class="block prose reveal" id="notes" data-nav-id="notes">
+        <Content />
+      </section>
+    )}
+
+    <div class="duallink" id="dual-link" data-nav-id="dual-link">
+      <h3>落地案例反向检索 · DUAL-LINK</h3>
+      {ap && (
+        <p class="skill-applied" style="margin-bottom:1rem">
+          已应用 ▸ {ap.scripts} 剧本 / {ap.films} 短片 / {ap.tvcs} 商业TVC
+        </p>
+      )}
+      <div class="duallink__list">
+        {
+          backlinks.length > 0 ? (
+            backlinks.map((b) => (
+              <a class="duallink__item" href={`${sectionRouteForType(b.data.type)}/${b.id}`}>
+                <span class="k">◈</span> {b.data.title} / {b.data.titleEn}
+              </a>
+            ))
+          ) : (
+            <span class="dim">暂无项目反向引用（可在商业案例的 skillIds 中关联本技能）</span>
+          )
+        }
+      </div>
+    </div>
+
+    <a class="btn btn-ghost back" href="/skills">← 返回研发与沉淀</a>
+  </article>
+</BaseLayout>
+
+<style>
+  .wf-graph { display: flex; flex-direction: column; align-items: center; gap: .4rem; margin-top: 1rem; }
+  .wf-node { width: min(420px, 100%); text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: .8rem 1rem; background: var(--surface-raised); color: var(--text-secondary); font-size: var(--fs-small); }
+  .wf-in { border-color: var(--accent-dim); }
+  .wf-out { border-color: var(--accent); color: var(--text-primary); }
+  .wf-arrow { color: var(--text-muted); font-family: var(--font-mono); }
+</style>

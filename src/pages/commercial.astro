@@ -1,0 +1,101 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TitleCard from '../components/TitleCard.astro';
+import SectionGroup from '../components/SectionGroup.astro';
+import { getProjects, coverOf, mediaUrl } from '../lib/projects';
+import { getSection } from '../lib/sections';
+import { buildSectionNav } from '../lib/sidenav';
+
+const sec = getSection('commercial');
+const all = await getProjects();
+
+const toItems = (list: Awaited<ReturnType<typeof getProjects>>) =>
+  list.map((c) => {
+    const cover = coverOf(c);
+    const coverUrl = cover ? mediaUrl(c, cover.file) : null;
+    const isTvc = c.data.deliverables.includes('#商业TVC');
+    return {
+      href: `/commercial/${c.id}`,
+      coverUrl,
+      title: c.data.title,
+      titleEn: c.data.titleEn ?? '',
+      eyebrow: [c.data.client, c.data.industry].filter(Boolean).join(' · '),
+      desc: c.data.statement,
+      flag: isTvc ? 'TVC' : undefined,
+      meta: c.data.deliverables,
+    };
+  });
+
+// A 品牌全案设计 → ip-design；B 海报宣传设计 → visual-design + ai-images；C 商业TVC广告 → tvc
+const brandSystems = toItems(all.filter((p) => p.data.type === 'ip-design'));
+const posters = toItems(all.filter((p) => ['visual-design', 'ai-images'].includes(p.data.type)));
+const tvcs = toItems(all.filter((p) => p.data.type === 'tvc'));
+
+// 常驻侧栏：板块页 → 项目种类 + 项目（与下方 SectionGroup 分组一致）
+const sectionNav = buildSectionNav([
+  {
+    label: 'A 品牌全案设计 · BRAND IDENTITY',
+    target: 'sec-A',
+    items: brandSystems.map((c) => ({ value: c.href, label: c.title })),
+  },
+  {
+    label: 'B 海报宣传设计 · POSTER & CAMPAIGN',
+    target: 'sec-B',
+    items: posters.map((c) => ({ value: c.href, label: c.title })),
+  },
+  {
+    label: 'C 商业TVC广告 · COMMERCIAL TVC',
+    target: 'sec-C',
+    items: tvcs.map((c) => ({ value: c.href, label: c.title })),
+  },
+]);
+---
+
+<BaseLayout
+  title="商业设计"
+  activeSection="commercial"
+  sideNav={sectionNav}
+  sideNavActive={Astro.url.pathname}
+  sideNavKind="section"
+>
+  <div class="page-inner">
+
+    <TitleCard
+      num={sec.num}
+      label={sec.label}
+      labelCn={sec.labelCn}
+      title={sec.label}
+      lede={`先锋商业全案画册（High-End Commercial Lookbook）——为品牌交付可落地、可复用的视觉系统与设计语言。`}
+      video={sec.video}
+    />
+
+    <div class="page-body">
+      <SectionGroup
+        index="A"
+        id="sec-A"
+        label="品牌全案设计"
+        labelEn="BRAND IDENTITY SYSTEM"
+        intro="从 IP 形象到完整视觉语言——为品牌搭建可复用的识别系统，而不只是单张好看的图。"
+        items={brandSystems}
+      />
+
+      <SectionGroup
+        index="B"
+        id="sec-B"
+        label="海报宣传设计"
+        labelEn="POSTER & CAMPAIGN"
+        intro="主视觉、海报与宣传物料——把品牌调性压进一张能一眼认出的画面。"
+        items={posters}
+      />
+
+      <SectionGroup
+        index="C"
+        id="sec-C"
+        label="商业TVC广告"
+        labelEn="COMMERCIAL TVC"
+        intro="可投放的 TVC 级广告片——用生成式管线交付成片级的商业影像。"
+        items={tvcs}
+      />
+    </div>
+  </div>
+</BaseLayout>

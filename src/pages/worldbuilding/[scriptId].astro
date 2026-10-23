@@ -1,0 +1,221 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FilmProcess from '../../components/FilmProcess.astro';
+import PromptAccordion from '../../components/PromptAccordion.astro';
+import WorkScreening from '../../components/WorkScreening.astro';
+import ProjectMedia from '../../components/ProjectMedia.astro';
+import ProjectProcess from '../../components/ProjectProcess.astro';
+import ProjectCover from '../../components/ProjectCover.astro';
+import { render } from 'astro:content';
+import { getProjects, getProjectById, galleryOf } from '../../lib/projects';
+import { buildDetailNav } from '../../lib/sidenav';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects
+    .filter(
+      (p) =>
+        p.data.type === 'worldbuilding' ||
+        // 影片项目只要被交叉收录进「剧本档案馆」，也出一张世界观页
+        (p.data.type === 'ai-video' && p.data.crossSections.includes('script-archive'))
+    )
+    .map((p) => ({ params: { scriptId: p.id }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const d = project.data;
+const all = await getProjects();
+const { Content } = await render(project);
+
+const statusLabel: Record<string, string> = {
+  Filmed: '已落地短片 · FILMED',
+  'In Development': '开发中 · IN DEVELOPMENT',
+  'Lore Concept': '纯文学概念 · LORE CONCEPT',
+};
+const relatedFilm = d.filmId ? getProjectById(all, d.filmId) : undefined;
+const initial = (name: string) => name.slice(0, 1);
+const mediaBase = `/media/${d.type}/${project.id}/`;
+const hasGallery = galleryOf(project).length > 0;
+// 角色演出型作品（有成品区/过程区/提示词素材）与纯剧本共用这一页模板
+const hasWork = d.finalClips.length > 0 || d.processClips.length > 0;
+// 设了 process 字段 → 走「剧本与世界观」新结构。
+// 世界观页只放 剧本 + 资产 + 关键帧；包装展示归 /films。
+const isNewStructure = !!d.process;
+// 是否存在可跳转的影片页（没有就写「暂无生成影片」）
+const hasFilm = d.finalClips.length > 0 || !!d.bilibiliUrl;
+
+// 常驻侧栏：详情页 → 页内条目（锚点）。按实际渲染区块条件生成，value = 区块 id。
+// 关键：仅当区块确有内容时才给条目，避免「空锚点」（点击不滚动、滚动不高亮）。
+const hasProse = typeof project.body === 'string' && project.body.trim().length > 0;
+const hasTimeline = d.processClips.length > 0;
+const hasPrompts = (d.promptShots?.length ?? 0) > 0;
+const wbDetailEntries = [
+  ...(isNewStructure
+    ? [
+        { value: 'process', label: '制作过程 · PROCESS' },
+        { value: 'film-link', label: '影片入口 · FILM' },
+      ]
+    : [
+        ...(hasGallery ? [{ value: 'gallery', label: '设定图组 · ASSETS' }] : []),
+        ...(d.characters.length > 0
+          ? [{ value: 'characters', label: '角色矩阵 · CHARACTERS' }]
+          : []),
+        ...(hasWork && hasFilm ? [{ value: 'screening', label: '成片放映 · SCREENING' }] : []),
+        ...(hasTimeline ? [{ value: 'film-process', label: '制作时间轴 · TIMELINE' }] : []),
+        ...(hasPrompts ? [{ value: 'prompts', label: '分镜提示词 · PROMPTS' }] : []),
+        ...(hasProse ? [{ value: 'notes', label: '创作笔记 · NOTES' }] : []),
+        ...(relatedFilm ? [{ value: 'dual-link', label: '关联短片 · DUAL-LINK' }] : []),
+      ]),
+];
+const detailNav = buildDetailNav(wbDetailEntries);
+---
+
+<BaseLayout
+  title={d.title}
+  description={d.statement}
+  activeSection="worldbuilding"
+  sideNav={detailNav}
+  sideNavActive={Astro.url.pathname}
+  sideNavKind="detail"
+>
+  <article class="page-inner detail">
+    <header class="detail-head reveal" id="overview" data-nav-id="overview">
+      <p class="label en-title">{d.title}</p>
+      <h1 class="display-type">{d.titleEn}</h1>
+      {d.statement && <p class="statement">{d.statement}</p>}
+      <div class="facts">
+        <span class="tag">{d.genre ?? '未分类题材'}</span>
+        <span class="tag">{d.year}</span>
+        {d.filmStatus && <span class="tag" style="color:var(--accent);border-color:var(--accent)">{statusLabel[d.filmStatus]}</span>}
+      </div>
+    </header>
+
+    <ProjectCover project={project} />
+
+    {
+      isNewStructure ? (
+        <>
+          <div id="process" data-nav-id="process"><ProjectProcess project={project} mediaBase={mediaBase} scope="world" /></div>
+
+          <div class="film-link" id="film-link" data-nav-id="film-link">
+            {hasFilm ? (
+              <a class="film-link__item" href={`/films/${project.id}`}>
+                <span class="film-link__k">▶</span>
+                <span class="film-link__t">观看影片 · {d.title}</span>
+                <span class="film-link__ar">↗</span>
+              </a>
+            ) : (
+              <p class="film-link__none">暂无生成影片</p>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {
+            hasGallery && (
+        <section class="block reveal" id="gallery" data-nav-id="gallery">
+          <p class="label en-title">ASSET GALLERY</p>
+          <h2 class="title-type">设定与素材图组</h2>
+          <ProjectMedia project={project} />
+        </section>
+      )
+    }
+
+    {
+      d.characters.length > 0 && (
+        <section class="block reveal" id="characters" data-nav-id="characters">
+          <p class="label en-title">CHARACTER MATRIX</p>
+          <h2 class="title-type">角色设计矩阵与小传</h2>
+          <div class="char-grid">
+            {d.characters.map((c) => (
+              <div class="char-cell">
+                <span class="char-ava char-ava--lg">{initial(c.name)}</span>
+                <div>
+                  <p class="char-name">{c.name}</p>
+                  {c.role && <p class="char-role">{c.role}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {hasWork && hasFilm && <div id="screening" data-nav-id="screening"><WorkScreening project={project} /></div>}
+
+    {hasTimeline && <div id="film-process" data-nav-id="film-process"><FilmProcess clips={d.processClips} mediaBase={mediaBase} /></div>}
+
+    {hasPrompts && <div id="prompts" data-nav-id="prompts"><PromptAccordion shots={d.promptShots} /></div>}
+
+    {hasProse && (
+      <section class="block prose reveal" id="notes" data-nav-id="notes">
+        <Content />
+      </section>
+    )}
+
+    {
+      relatedFilm && (
+        <div class="duallink" id="dual-link" data-nav-id="dual-link">
+          <h3>关联短片 · DUAL-LINK</h3>
+          <div class="duallink__list">
+            <a class="duallink__item" href={`/films/${relatedFilm.id}`}>
+              <span class="k">▶</span> {relatedFilm.data.title} / {relatedFilm.data.titleEn}
+            </a>
+          </div>
+        </div>
+      )
+    }
+        </>
+      )
+    }
+
+    <a class="btn btn-ghost back" href="/worldbuilding">← 返回世界观与叙事</a>
+  </article>
+</BaseLayout>
+
+<style>
+  /* 剧本说明页 → 影片说明页的跳转 */
+  .film-link {
+    margin-top: clamp(2rem, 5vh, 3rem);
+  }
+  .film-link__item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-media);
+    background: var(--surface);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: border-color var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
+  }
+  .film-link__item:hover {
+    border-color: var(--accent);
+    transform: translateX(4px);
+  }
+  .film-link__k { color: var(--accent); }
+  .film-link__t { flex: 1; min-width: 0; }
+  .film-link__ar {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    transition: transform var(--dur-base) var(--ease);
+  }
+  .film-link__item:hover .film-link__ar { transform: translate(3px, -3px); }
+  .film-link__none {
+    margin: 0;
+    padding: 1rem 1.15rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-media);
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .char-cell { display: flex; align-items: center; gap: .8rem; border: 1px solid var(--border); border-radius: 8px; padding: .8rem 1rem; background: var(--surface-raised); }
+  .char-ava--lg { width: 42px; height: 42px; font-size: .95rem; }
+  .char-name { color: var(--text-primary); font-size: .95rem; margin: 0; }
+  .char-role { color: var(--text-muted); font-size: var(--fs-small); margin: .2rem 0 0; }
+</style>

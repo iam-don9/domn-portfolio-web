@@ -1,0 +1,107 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectMedia from '../../components/ProjectMedia.astro';
+import ProjectCover from '../../components/ProjectCover.astro';
+import { getProjects, getProjectsByIds, coverOf, mediaUrl, galleryOf } from '../../lib/projects';
+import { buildDetailNav } from '../../lib/sidenav';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects
+    .filter((p) => ['tvc', 'visual-design', 'ai-images', 'ip-design'].includes(p.data.type))
+    .map((p) => ({ params: { caseId: p.id }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const d = project.data;
+const all = await getProjects();
+
+const cover = coverOf(project);
+const coverUrl = cover ? mediaUrl(project, cover.file) : null;
+const isTvc = d.deliverables.includes('#商业TVC');
+const hasGallery = galleryOf(project).filter((m) => m.kind !== 'cover').length > 0;
+const skills = getProjectsByIds(all, d.skillIds ?? []);
+
+// 常驻侧栏：详情页 → 页内条目（锚点）。value = 区块 id。
+const detailNav = buildDetailNav([
+  ...(isTvc ? [{ value: 'tvc-screening', label: '商业 TVC 展映 · SCREENING' }] : []),
+  ...(hasGallery ? [{ value: 'asset-gallery', label: '设计图组与延展 · GALLERY' }] : []),
+  ...(skills.length > 0 ? [{ value: 'dual-link', label: '实现所用技能 · SKILLS' }] : []),
+]);
+---
+
+<BaseLayout
+  title={d.title}
+  description={d.statement}
+  activeSection="commercial"
+  sideNav={detailNav}
+  sideNavActive={Astro.url.pathname}
+  sideNavKind="detail"
+>
+  <article class="page-inner detail">
+    <header class="detail-head reveal" id="overview" data-nav-id="overview">
+      <p class="label en-title">{d.title}</p>
+      <h1 class="display-type">{d.titleEn}</h1>
+      <p class="statement">{d.statement}</p>
+      <div class="facts">
+        <span class="tag">{d.industry ?? '行业未标注'}</span>
+        <span class="tag">{d.year}</span>
+        {d.client && <span class="tag">客户 · {d.client}</span>}
+        {d.duration && <span class="tag">{Math.floor(d.duration / 60)}:{String(d.duration % 60).padStart(2, '0')}</span>}
+      </div>
+      {d.deliverables.length > 0 && (
+        <div class="case-chips" style="margin-top:.8rem">
+          {d.deliverables.map((x) => <span class="c">{x}</span>)}
+        </div>
+      )}
+    </header>
+
+    {!isTvc && <ProjectCover project={project} />}
+
+    {
+      isTvc && (
+        <section class="block reveal" id="tvc-screening" data-nav-id="tvc-screening">
+          <p class="label en-title">TVC SCREENING</p>
+          <h2 class="title-type">商业 TVC 展映（横版 + 竖版切片）</h2>
+          <div class="player">
+            <div class="player__pane">
+              <span class="player__tag">16:9 横版</span>
+              {coverUrl ? <img src={coverUrl} alt={d.title} /> : <span class="ph">横版切片待上传</span>}
+            </div>
+            <div class="player__pane">
+              <span class="player__tag">9:16 竖版</span>
+              {coverUrl ? <img src={coverUrl} alt={d.title} /> : <span class="ph">竖版切片待上传</span>}
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    {
+      hasGallery && (
+        <section class="block reveal" id="asset-gallery" data-nav-id="asset-gallery">
+          <p class="label en-title">ASSET GALLERY</p>
+          <h2 class="title-type">设计图组与延展</h2>
+          <ProjectMedia project={project} excludeCover={true} layout="masonry" />
+        </section>
+      )
+    }
+
+    {
+      skills.length > 0 && (
+        <div class="duallink" id="dual-link" data-nav-id="dual-link">
+          <h3>实现所用技能 · DUAL-LINK</h3>
+          <div class="duallink__list">
+            {skills.map((s) => (
+              <a class="duallink__item" href={`/skills/${s.id}`}>
+                <span class="k">◆</span> {s.data.title} / {s.data.titleEn}
+              </a>
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    <a class="btn btn-ghost back" href="/commercial">← 返回商业设计</a>
+  </article>
+</BaseLayout>

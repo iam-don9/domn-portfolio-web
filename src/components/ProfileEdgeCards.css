@@ -1,0 +1,86 @@
+/* S6 右栏 · 4 张 4:3 横向翻面卡（2×2 网格，hover 翻面） */
+.pec-grid {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: clamp(.5rem, 1.3vh, 1rem);
+}
+/* 卡片盒：横向 4:3 比例，居中于网格格；极端宽屏由 max-width 收住 */
+.pec-cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+  height: 100%;
+  width: auto;
+  align-self: center;
+  justify-self: center;
+  max-width: 100%;
+}
+.pec-tilt { width: 100%; height: 100%; }
+
+/* 正反面底：填满 TiltedCard 的 face，自带实底，避免翻面透出另一面 */
+.pec-face {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(.7rem, min(1.7vw, 2.4vh), 1.5rem);
+  overflow: hidden;
+}
+
+/* ── 正面：外界疑虑 ── */
+.pec-front {
+  justify-content: space-between;
+  background:
+    radial-gradient(130% 90% at 82% -8%, rgba(0, 106, 96, 0.34), transparent 58%),
+    linear-gradient(158deg, #101715 0%, #070a0a 72%);
+  color: var(--text-primary);
+}
+/* ── 背面：回击回复 ── */
+.pec-back {
+  justify-content: flex-start;
+  background:
+    radial-gradient(120% 80% at 18% 0%, rgba(0, 106, 96, 0.22), transparent 55%),
+    linear-gradient(160deg, #0d1211 0%, #050807 78%);
+  color: var(--text-primary);
+}
+
+.pec-k {
+  font-family: var(--font-mono);
+  font-size: clamp(.6rem, min(.7vw, 1.25vh), .9rem);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: .14em .72em;
+  align-self: flex-start;
+}
+.pec-q {
+  margin: clamp(.5rem, 1.4vh, .9rem) 0 0;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: clamp(.82rem, min(1.35vw, 2.1vh), 1.55rem);
+  line-height: 1.42;
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+.pec-hint {
+  margin: clamp(.5rem, 1.3vh, .8rem) 0 0;
+  font-family: var(--font-mono);
+  font-size: clamp(.58rem, min(.65vw, 1.15vh), .86rem);
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+.pec-a {
+  margin: clamp(.45rem, 1.2vh, .7rem) 0 0;
+  font-size: clamp(.74rem, min(1.15vw, 1.8vh), 1.35rem);
+  line-height: 1.52;
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
