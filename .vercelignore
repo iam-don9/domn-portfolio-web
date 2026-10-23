@@ -1,0 +1,10 @@
+.git
+.vercel
+.env*
+node_modules
+_*
+.workbuddy
+output
+tmp
+portfolio-source/media/hero.mp4
+dist
