@@ -39,7 +39,24 @@ jobs:
           CLOUDBASE_SECRET_ID: ${{ secrets.CLOUDBASE_SECRET_ID }}
           CLOUDBASE_SECRET_KEY: ${{ secrets.CLOUDBASE_SECRET_KEY }}
 
-      - name: Deploy to static hosting
-        run: tcb hosting deploy ./dist -e "$CLOUDBASE_ENV_ID" --verify --concurrency 5
+      - name: Deploy static hosting files
+        run: >-
+          tcb hosting deploy ./dist
+          -e "$CLOUDBASE_ENV_ID"
+          --verify
+          --concurrency 5
+          --ignore "media/featured/shi-er-zhan.png"
+        env:
+          CLOUDBASE_ENV_ID: ${{ secrets.CLOUDBASE_ENV_ID }}
+
+      - name: Deploy slow asset separately
+        run: >-
+          tcb hosting deploy ./dist/media/featured/shi-er-zhan.png
+          media/featured/shi-er-zhan.png
+          -e "$CLOUDBASE_ENV_ID"
+          --verify
+          --concurrency 1
+          --retry-count 5
+          --retry-interval 5000
         env:
           CLOUDBASE_ENV_ID: ${{ secrets.CLOUDBASE_ENV_ID }}
