@@ -54,6 +54,7 @@ const { deckMap, skills } = Astro.props;
   function initSkillSlides() {
     const lb = document.getElementById('skill-lightbox') as HTMLElement;
     if (!lb) { SL = null; return; }
+    document.body.appendChild(lb);
     const slideEl = document.getElementById('sl-slide') as HTMLElement;
     const iframeWrap = document.getElementById('sl-iframe-wrap') as HTMLElement;
     const counterEl = document.getElementById('sl-counter') as HTMLElement;
