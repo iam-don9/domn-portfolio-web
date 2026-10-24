@@ -39,20 +39,18 @@ jobs:
           CLOUDBASE_SECRET_ID: ${{ secrets.CLOUDBASE_SECRET_ID }}
           CLOUDBASE_SECRET_KEY: ${{ secrets.CLOUDBASE_SECRET_KEY }}
 
-      - name: Deploy static hosting files
-        run: >-
-          tcb hosting deploy ./dist
-          -e "$CLOUDBASE_ENV_ID"
-          --verify
-          --concurrency 5
-          --ignore "media/featured/shi-er-zhan.png"
+      - name: Deploy updated SkillSlides script
+        run: |
+          skill_slides="$(find dist/_astro -maxdepth 1 -type f -name 'SkillSlides*.js' -print -quit)"
+          test -n "$skill_slides"
+          tcb hosting deploy "$skill_slides" "_astro/$(basename "$skill_slides")" \
+            -e "$CLOUDBASE_ENV_ID" --verify --concurrency 1 --retry-count 5 --retry-interval 5000
         env:
           CLOUDBASE_ENV_ID: ${{ secrets.CLOUDBASE_ENV_ID }}
 
-      - name: Deploy slow asset separately
+      - name: Deploy updated skills page
         run: >-
-          tcb hosting deploy ./dist/media/featured/shi-er-zhan.png
-          media/featured/shi-er-zhan.png
+          tcb hosting deploy ./dist/skills/index.html skills/index.html
           -e "$CLOUDBASE_ENV_ID"
           --verify
           --concurrency 1
