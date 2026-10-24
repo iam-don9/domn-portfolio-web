@@ -40,6 +40,6 @@ jobs:
           CLOUDBASE_SECRET_KEY: ${{ secrets.CLOUDBASE_SECRET_KEY }}
 
       - name: Deploy to static hosting
-        run: tcb hosting deploy ./dist -e "$CLOUDBASE_ENV_ID" --verify
+        run: tcb hosting deploy ./dist -e "$CLOUDBASE_ENV_ID" --verify --concurrency 5
         env:
           CLOUDBASE_ENV_ID: ${{ secrets.CLOUDBASE_ENV_ID }}
